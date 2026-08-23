@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PACKAGE_NAME="debian-package-aide"
+PACKAGE_NAME="debian-config-aide"
 
 # --- Helper Functions ---
 
@@ -9,7 +9,7 @@ fix_permissions() {
 
     LIB_DIR="/var/lib/aide"
     LOG_DIR="/var/log/aide"
-    HOOK_SCRIPT="/usr/sbin/aide-update-hook.sh"
+    HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
 
     if [ -d "${LIB_DIR}" ]; then
         echo "${PACKAGE_NAME}: Fixing permissions on ${LIB_DIR}"
