@@ -1,1 +1,3 @@
 etc/aide/aide.conf.d/* etc/aide/aide.conf.d
+
+usr/lib/systemd/system/* usr/lib/systemd/system
