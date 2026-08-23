@@ -8,5 +8,9 @@ Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
 
 Package: debian-config-aide
 Architecture: all
-Depends: ${misc:Depends}, aide (>= 0.19)
+Depends: aide (>= 0.19),
+ libcap2-bin,
+ adduser,
+ ${shlibs:Depends},
+ ${misc:Depends}
 Description: Configures AIDE system integrity scanner.

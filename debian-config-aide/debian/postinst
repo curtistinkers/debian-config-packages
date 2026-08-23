@@ -13,24 +13,44 @@ fix_permissions() {
 
     if [ -d "${LIB_DIR}" ]; then
         echo "${PACKAGE_NAME}: Fixing permissions on ${LIB_DIR}"
-        chown _aide:_aide ${LIB_DIR}
+        chown _aide:_aide -R "${LIB_DIR}"
     fi
 
     if [ -d "${LOG_DIR}" ]; then
         echo "${PACKAGE_NAME}: Fixing permissions on ${LOG_DIR}"
-        chown _aide:adm ${LOG_DIR}
+        chown _aide:adm -R "${LOG_DIR}"
     fi
 
     if [ -f "${HOOK_SCRIPT}" ]; then
         echo "${PACKAGE_NAME}: Fixing permissions on ${HOOK_SCRIPT}"
-        chown _aide:_aide ${HOOK_SCRIPT}
+        chown _aide:_aide "${HOOK_SCRIPT}"
     fi
+}
+
+run_aideinit_as_aide_user() {
+    TARGET_USER="_aide"
+    TARGET_GROUP="_aide"
+
+    # 1. Resolve UID and GID for capsh
+    USER_UID=$(id -u "${TARGET_USER}")
+    USER_GID=$(id -g "${TARGET_GROUP}")
+
+    echo "Initializing AIDE database as user ${TARGET_USER}..."
+
+    # 2. Execute AIDE using capsh with dropped privileges but kept capabilities
+    capsh \
+      --uid="${USER_UID}" \
+      --gid="${USER_GID}" \
+      --inh="cap_dac_read_search,cap_audit_write" \
+      --addamb="cap_dac_read_search,cap_audit_write" \
+      -- -c "aideinit -y -f"
 }
 
 # --- Main Logic Execution ---
 
 case "$1" in
     configure)
+        run_aideinit_as_aide_user
         fix_permissions
         ;;
 
