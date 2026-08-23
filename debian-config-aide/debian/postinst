@@ -39,10 +39,11 @@ run_aideinit_as_aide_user() {
 
     # 2. Execute AIDE using capsh with dropped privileges but kept capabilities
     capsh \
-      --uid="${USER_UID}" \
-      --gid="${USER_GID}" \
       --inh="cap_dac_read_search,cap_audit_write" \
       --addamb="cap_dac_read_search,cap_audit_write" \
+      --keep=1 \
+      --uid="${USER_UID}" \
+      --gid="${USER_GID}" \
       -- -c "aideinit -y -f"
 }
 
