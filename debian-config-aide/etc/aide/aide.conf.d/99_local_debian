@@ -34,7 +34,8 @@ UserHomeDir = VarDir-n
 # -------------
 
 # Match AIDE logs
-/var/log/aide/.*\.log$ f LogFile
+/var/log/aide/.*\.log(\.[0-9]+)?$ f LogFile
+/var/log/aide/.*\.log\.[0-9]+(\.gz)?$ f VarFile+ANF+I
 
 # Match system event logs
 /var/log/unattended-upgrades/unattended-upgrades-shutdown\.log$ LogFile
@@ -82,3 +83,7 @@ UserHomeDir = VarDir-n
 # Ignore the dynamic mirror list metadata and release signatures
 !/var/lib/apt/lists/_.*$
 !/var/lib/apt/lists/auxfiles/.*$
+
+# Exim rules
+# ----------
+=/var/spool/exim4/db$ VarTime
