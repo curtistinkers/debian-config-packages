@@ -1,0 +1,54 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-package-aide"
+
+# --- Helper Functions ---
+
+fix_permissions() {
+
+    LIB_DIR="/var/lib/aide"
+    LOG_DIR="/var/log/aide"
+    HOOK_SCRIPT="/usr/sbin/aide-update-hook.sh"
+
+    if [ -d "${LIB_DIR}" ]; then
+        echo "${PACKAGE_NAME}: Fixing permissions on ${LIB_DIR}"
+        chown _aide:_aide ${LIB_DIR}
+    fi
+
+    if [ -d "${LOG_DIR}" ]; then
+        echo "${PACKAGE_NAME}: Fixing permissions on ${LOG_DIR}"
+        chown _aide:adm ${LOG_DIR}
+    fi
+
+    if [ -f "${HOOK_SCRIPT}" ]; then
+        echo "${PACKAGE_NAME}: Fixing permissions on ${HOOK_SCRIPT}"
+        chown _aide:_aide ${HOOK_SCRIPT}
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    configure)
+        fix_permissions
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: postinst called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

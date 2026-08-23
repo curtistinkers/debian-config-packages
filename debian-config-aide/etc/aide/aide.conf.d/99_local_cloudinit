@@ -1,0 +1,24 @@
+############################
+# --- CLOUD-INIT RULES --- #
+############################
+
+CloudLogs   = L+growing+ANF+I
+
+# Protect the top-level directory wrappers
+/var/lib/cloud d VarDir
+=/var/tmp/cloud-init$ VarDir
+
+# Lock down critical provisioning bootstrap text files
+/var/lib/cloud/instances/.*/(user-data|cloud-config|vendor-data[0-9]?)\.txt$ f VarTime
+/var/lib/cloud/instances/.*/(user-data|cloud-config|vendor-data[0-9]?)\.txt\.i$ f InodeData
+
+# Filter out tracking objects and dynamic states
+!/var/lib/cloud/(data|handlers|scripts|seed|sem)/.*$
+!/var/lib/cloud/instance$
+!/var/lib/cloud/instances/.*/(obj\.pkl|boot-finished|datasource|handlers|sem|scripts)$
+
+# Handle the cloud-init output logs
+=/var/log/cloud-init.*\.log f CloudLogs
+
+# Handle cloud-init touching hosts file
+=/etc/hosts$ f VarTime

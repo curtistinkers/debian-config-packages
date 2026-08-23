@@ -1,0 +1,11 @@
+debian-config-aide (1.0.0) trixie; urgency=low
+
+  * Initial package framework.
+  * Added debian rules.
+  * Added cloud-init rules.
+  * Added aide update hook script.
+  * Added apt post-invoke hook to update database.
+  * Added service file to update database on boot.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Sat, 22 Aug 2026 20:22:00 -0500

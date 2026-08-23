@@ -1,0 +1,64 @@
+[Unit]
+Description=Updates AIDE Baseline on Boot
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=checkaide.service
+AssertPathExists=/etc/aide/aide.conf
+AssertPathExists=/var/lib/aide/
+AssertPathExists=/var/log/aide/
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/aide-update-hook.sh
+RemainAfterExit=yes
+
+# Core Execution Identity
+User=_aide
+Group=_aide
+
+# Cannot Use Private Filesystem for AIDE to Work
+ProtectProc=no
+ProcSubset=no
+ProtectHome=no
+ProtectKernelModules=no
+ProtectKernelLogs=no
+PrivateUsers=no
+PrivateTmp=no
+PrivateDevices=no
+
+# Filesystem Restrictions
+ProtectSystem=strict
+ReadWritePaths=/var/lib/aide/ /var/log/aide/
+ReadOnlyPaths=/etc/aide/ /etc/aide/aide.conf /etc/aide/aide.conf.d/
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+RemoveIPC=yes
+UMask=0077
+
+# Kernel & Privilege Restrictions
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+AmbientCapabilities=
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+
+# Network Isolation
+PrivateNetwork=yes
+RestrictAddressFamilies=none
+ProtectHostname=yes
+IPAddressDeny=any
+
+# System Architecture Protections
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallFilter=~@resources @privileged
+SystemCallArchitectures=native
+
+# Device and Hardware Isolation
+ProtectClock=yes
+
+[Install]
+WantedBy=multi-user.target

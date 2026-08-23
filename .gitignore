@@ -1,0 +1,12 @@
+**/debian/.debhelper/
+**/debian/debhelper-build-stamp
+**/debian/*.postrm.debhelper
+**/debian/*.substvars
+**/debian/*/
+**/debian/files
+*.dsc
+*.tar.gz
+*_all.deb
+*_amd64.build
+*_amd64.buildinfo
+*_amd64.changes

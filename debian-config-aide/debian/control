@@ -1,0 +1,12 @@
+Source: debian-config-aide
+Section: admin
+Priority: optional
+Maintainer: curtistinkers <curtistinkers@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+
+Package: debian-config-aide
+Architecture: all
+Depends: ${misc:Depends}, aide
+Description: Configures AIDE system integrity scanner.
