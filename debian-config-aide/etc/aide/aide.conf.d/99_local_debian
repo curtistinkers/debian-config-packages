@@ -2,30 +2,29 @@
 # --- CUSTOM GROUPS --- #
 #########################
 
-#L         = p+u+g+ftype+i+l+n+X
-#>         = p+u+g+ftype+i+l+n+X+s+growing
-#OwnerMode = p+u+g+ftype
-#VarFile   = OwnerMode+n+l+X
-#Size      = s+b
-#InodeData = VarFile+Size+i
-#Full      = InodeData+m+c+a+H
-#VarDir    = OwnerMode+n+i+X
-
 # Define group for regular log files
-LogFile     = L+growing+ANF+I
+LogFile       = L+growing+ANF+I
 
-# Define group for user home directory that strips out link count
-UserHomeDir = VarDir-n
+# Define group for directory that strips out link count
+VarDirNoLinks = VarDir-n
+
+# Define group for user home directory & files
+UserHomeDir   = VarDirNoLinks+ANF
+UserHomeFile  = VarFile+ANF+ARF
 
 ########################
 # --- DEBIAN RULES --- #
 ########################
 
+# Root Dir rules
+# --------------
+=/$ d VarTime
+
 # Temporary and runfile rules
 # ---------------------------
 
 # Match ONLY the /tmp, /run directories itself
-=/(tmp|run)$ d=tmpfs VarDir
+=/(tmp|run)$ d=tmpfs VarDirNoLinks
 
 # Ignore everything inside the /tmp, /run directories
 !/(tmp|run)/.* =tmpfs
@@ -38,7 +37,7 @@ UserHomeDir = VarDir-n
 /var/log/aide/.*\.log\.[0-9]+(\.gz)?$ f VarFile+ANF+I
 
 # Match system event logs
-/var/log/unattended-upgrades/unattended-upgrades-shutdown\.log$ LogFile
+/var/log/unattended-upgrades/unattended-upgrades(-shutdown)?\.log$ LogFile
 /var/log/wtmp\.db$ InodeData
 
 # Hardware device rules
@@ -56,11 +55,11 @@ UserHomeDir = VarDir-n
 # -------------------------
 
 # Monitor users' home folders (new users, deleted users, or changed folder permissions)
-=/home/[^/]+$ UserHomeDir
+=/home/[^/]+$ d VarDirNoLinks
 
 # Track files/folders inside, but ONLY for permissions, types, and new items
-/home/[^/]+/.* d UserHomeDir+ANF
-/home/[^/]+/.* f VarFile+ANF
+/home/[^/]+/.* d UserHomeDir
+/home/[^/]+/.* f UserHomeFile
 
 # Strictly monitor SSH keys for tampering (No unauthorized keys allowed)
 /home/[^/]+/\.ssh/.*$ Full
@@ -71,7 +70,7 @@ UserHomeDir = VarDir-n
 # Ignore history files that shift constantly during active terminal sessions
 !/home/[^/]+/\..*_history$
 
-# APT cache rules
+# Dpkg/APT cache rules
 # ---------------
 
 # Protect the root directory itself
@@ -83,6 +82,9 @@ UserHomeDir = VarDir-n
 # Ignore the dynamic mirror list metadata and release signatures
 !/var/lib/apt/lists/_.*$
 !/var/lib/apt/lists/auxfiles/.*$
+
+# Ignore temporary transactional dpkg update files
+!/var/lib/dpkg/updates/.*$
 
 # Exim rules
 # ----------
