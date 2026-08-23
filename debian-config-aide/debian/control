@@ -11,6 +11,5 @@ Architecture: all
 Depends: aide (>= 0.19),
  libcap2-bin,
  adduser,
- ${shlibs:Depends},
  ${misc:Depends}
 Description: Configures AIDE system integrity scanner.
