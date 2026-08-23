@@ -1,5 +1,5 @@
-usr/lib/systemd/system/* usr/lib/systemd/system
-usr/sbin/* usr/sbin
-
 etc/aide/aide.conf.d/* etc/aide/aide.conf.d
 etc/apt/apt.conf.d/* etc/apt/apt.conf.d
+
+usr/lib/systemd/system/* usr/lib/systemd/system
+usr/libexec/debian-config-aide/* usr/libexec/debian-config-aide
