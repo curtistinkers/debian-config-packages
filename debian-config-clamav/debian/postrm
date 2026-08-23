@@ -1,0 +1,82 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-clamav"
+SCRIPT_NAME="postrm"
+
+# --- Helper Functions ---
+
+reload_systemd_daemon() {
+    if [ -x "/bin/systemctl" ]; then
+        echo "${PACKAGE_NAME}: Reloading systemd manager configuration..."
+        systemctl daemon-reload >/dev/null || true
+    fi
+}
+
+stop_clamav_freshclam_once_timer() {
+	if [ -x "/bin/systemctl" ]; then
+		if systemctl is-active --quiet clamav-freshclam-once.timer; then
+			if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+				echo "${PACKAGE_NAME}: Stopping clamav-freshclam-once timer..."
+				deb-systemd-invoke stop clamav-freshclam-once.timer >/dev/null || true
+			fi
+		fi
+	fi
+}
+
+disable_clamav_freshclam_once_timer() {
+	if [ -x "/usr/bin/deb-systemd-helper" ]; then
+		echo "${PACKAGE_NAME}: Disabling clamav-freshclam-once timer..."
+		deb-systemd-helper disable clamav-freshclam-once.timer >/dev/null || true
+	fi
+}
+
+unmask_clamav_freshclam_service() {
+	# Check if the service file actually exists on disk first
+    if [ -f "/lib/systemd/system/clamav-freshclam.service" ]; then
+		if [ -x "/usr/bin/deb-systemd-helper" ]; then
+			echo "${PACKAGE_NAME}: Unmasking clamav-freshclam service..."
+			deb-systemd-helper unmask clamav-freshclam.service >/dev/null || true
+		fi
+	fi
+}
+
+start_clamav_freshclam_service() {
+	# Check if the service file actually exists on disk first
+    if [ -f "/lib/systemd/system/clamav-freshclam.service" ]; then
+		if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+			echo "${PACKAGE_NAME}: Starting clamav-freshclam service..."
+			deb-systemd-invoke start clamav-freshclam.service >/dev/null || true
+		fi
+	fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    remove|purge)
+		reload_systemd_daemon
+		
+		# Stop once-daily update service
+		stop_clamav_freshclam_once_timer
+		disable_clamav_freshclam_once_timer
+
+		# Start continuous update service
+		unmask_clamav_freshclam_service
+		start_clamav_freshclam_service
+        ;;
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

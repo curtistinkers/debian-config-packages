@@ -1,0 +1,19 @@
+Source: debian-config-clamav
+Section: admin
+Priority: optional
+Maintainer: curtistinkers <curtistinkers@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+
+Package: debian-config-clamav
+Architecture: all
+Depends: 
+ clamav,
+ clamav-freshclam,
+ systemd,
+ ${misc:Depends}
+Description: Custom daily update and scan configurations for ClamAV
+ This package masks the continuous freshclam daemon service and
+ enables the daily update timer along with a daily full-system
+ virus scan using systemd timers.

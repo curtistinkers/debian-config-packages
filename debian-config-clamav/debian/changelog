@@ -1,0 +1,7 @@
+debian-config-clamav (1.0.0) trixie; urgency=low
+
+  * Initial package framework.
+  * Added AIDE rules for clamav.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Sun, 23 Aug 2026 15:47:00 -0500

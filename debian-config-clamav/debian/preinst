@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-clamav"
+SCRIPT_NAME="preinst"
+
+# --- Helper Functions ---
+
+stop_clamav_freshclam_service() {
+	if [ -x "/bin/systemctl" ]; then
+		if systemctl is-active --quiet clamav-freshclam.service; then
+			if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+				echo "${PACKAGE_NAME}: Stopping clamav-freshclam service..."
+				deb-systemd-invoke stop clamav-freshclam.service >/dev/null || true
+			fi
+		fi
+	fi
+}
+
+mask_clamav_freshclam_service() {
+	if [ -x "/usr/bin/deb-systemd-helper" ]; then
+		echo "${PACKAGE_NAME}: Masking clamav-freshclam service..."
+		deb-systemd-helper mask clamav-freshclam.service >/dev/null || true
+	fi
+}
+
+enable_clamav_freshclam_once_timer() {
+    if [ -x "/usr/bin/deb-systemd-helper" ]; then
+        echo "${PACKAGE_NAME}: Enabling clamav-freshclam-once timer..."
+        deb-systemd-helper enable clamav-freshclam-once.timer >/dev/null || true
+    fi
+}
+
+start_clamav_freshclam_once_timer() {
+    if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+        echo "${PACKAGE_NAME}: Starting clamav-freshclam-once timer..."
+        deb-systemd-invoke start clamav-freshclam-once.timer >/dev/null || true
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    install|upgrade)
+		# Stop continuous update service
+		stop_clamav_freshclam_service
+		mask_clamav_freshclam_service
+
+		# Start once-daily update service
+		enable_clamav_freshclam_once_timer
+		start_clamav_freshclam_once_timer
+        ;;
+	abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

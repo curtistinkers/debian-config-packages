@@ -1,0 +1,49 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-clamav"
+SCRIPT_NAME="prerm"
+
+# --- Helper Functions ---
+
+stop_clamav_scan_daily_timer() {
+	if [ -x "/bin/systemctl" ]; then
+		if systemctl is-active --quiet clamav-scan-daily.timer; then
+			if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+				echo "${PACKAGE_NAME}: Stopping clamav-scan-daily timer..."
+				deb-systemd-invoke stop clamav-scan-daily.timer >/dev/null || true
+			fi
+		fi
+	fi
+}
+
+disable_clamav_scan_daily_timer() {
+    if [ -x "/usr/bin/deb-systemd-helper" ]; then
+        echo "${PACKAGE_NAME}: Disabling clamav-scan-daily timer..."
+        deb-systemd-helper disable clamav-scan-daily.timer >/dev/null || true
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    remove|purge)
+		# Stop once-daily virus scan service
+		stop_clamav_scan_daily_timer
+		disable_clamav_scan_daily_timer
+        ;;
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

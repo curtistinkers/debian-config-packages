@@ -1,0 +1,46 @@
+[Unit]
+Description=Daily ClamAV Virus Scan
+Documentation=man:clamscan(1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/freshclam --quiet --log=/var/log/clamav/freshclam.log
+ExecStart=/usr/bin/clamscan -r -i / \
+    --exclude-dir=^/sys \
+    --exclude-dir=^/proc \
+    --exclude-dir=^/dev \
+    --exclude-dir=^/run \
+    --exclude-dir=^/var/lib/docker \
+    --log=/var/log/clamav/daily_scan.log
+
+# --- Hardened Sandbox Settings for Maximum Security Score ---
+User=root
+Group=root
+
+# Filesystem Sandboxing
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/clamav /var/lib/clamav
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+
+# Privilege and Kernel Restrictions
+NoNewPrivileges=true
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_CHOWN
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+
+# System Call Filtering
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+MemoryDenyWriteExecute=true
+
+# Device Restrictions
+DevicePolicy=closed
+DeviceAllow=/dev/null r
