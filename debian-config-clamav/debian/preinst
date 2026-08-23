@@ -50,7 +50,7 @@ case "$1" in
 		enable_clamav_freshclam_once_timer
 		start_clamav_freshclam_once_timer
         ;;
-	abort-upgrade|abort-remove|abort-deconfigure)
+	abort-upgrade)
         ;;
     *)
         if [ "${1}" = '' ]; then

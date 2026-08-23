@@ -27,11 +27,13 @@ disable_clamav_scan_daily_timer() {
 # --- Main Logic Execution ---
 
 case "$1" in
-    remove|purge)
+    remove|upgrade)
 		# Stop once-daily virus scan service
 		stop_clamav_scan_daily_timer
 		disable_clamav_scan_daily_timer
         ;;
+	failed-upgrade)
+	    ;;
     *)
         if [ "${1}" = '' ]; then
             ARG="none"

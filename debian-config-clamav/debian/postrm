@@ -65,6 +65,9 @@ case "$1" in
 		unmask_clamav_freshclam_service
 		start_clamav_freshclam_service
         ;;
+	upgrade|failed-upgrade|disappear)
+		reload_systemd_daemon
+		;;
     *)
         if [ "${1}" = '' ]; then
             ARG="none"

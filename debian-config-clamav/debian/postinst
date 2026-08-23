@@ -23,12 +23,12 @@ start_clamav_scan_daily_timer() {
 # --- Main Logic Execution ---
 
 case "$1" in
-    install|upgrade)
+    configure)
 		# Start once daily update service
         enable_clamav_scan_daily_timer
 		start_clamav_scan_daily_timer
         ;;
-    abort-upgrade|abort-remove|abort-deconfigure)
+    triggered|abort-upgrade|abort-remove|abort-deconfigure)
         ;;
     *)
         if [ "${1}" = '' ]; then
