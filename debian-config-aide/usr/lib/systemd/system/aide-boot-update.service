@@ -8,7 +8,7 @@ AssertPathExists=/var/log/aide/
 
 [Service]
 Type=oneshot
-ExecStart=/usr/sbin/aide-update-hook.sh
+ExecStart=/usr/libexec/debian-config-aide/aide-update-hook.sh
 RemainAfterExit=yes
 
 # Core Execution Identity
