@@ -36,10 +36,8 @@ UMask=0077
 
 # Kernel & Privilege Restrictions
 NoNewPrivileges=yes
-CapabilityBoundingSet=
-CapabilityBoundingSet=CAP_DAC_READ_SEARCH
-AmbientCapabilities=
-AmbientCapabilities=CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_AUDIT_WRITE
+AmbientCapabilities=CAP_DAC_READ_SEARCH CAP_AUDIT_WRITE
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 RestrictNamespaces=yes
