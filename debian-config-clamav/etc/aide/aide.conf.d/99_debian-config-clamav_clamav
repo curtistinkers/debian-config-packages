@@ -1,0 +1,13 @@
+##############################################
+# --- CLAMAV SIGNATURE DATABASE HANDLING --- #
+##############################################
+
+# Protect the ClamAV state directory wrapper itself
+=/var/lib/clamav$ d VarDir
+
+# Allow signature database extensions to shift and update seamlessly
+# Tracks: file type, permissions, owner, and group - drops sizes and hashes
+/var/lib/clamav/.*\.(cvd|cld|dat)$ f L+ANF
+
+# Track the live signature download mirror states
+/var/lib/clamav/freshclam\.dat$ f VarFile
