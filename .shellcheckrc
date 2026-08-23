@@ -1,0 +1,8 @@
+# Fallback to standard POSIX sh if the file lacks a clear shebang
+shell=bash
+
+# Allow it to resolve any relative sources if needed
+external-sources=true
+source-path=SCRIPTDIR
+
+enable=quote-safe-variables,require-variable-braces
