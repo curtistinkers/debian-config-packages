@@ -10,3 +10,4 @@
 *_amd64.build
 *_amd64.buildinfo
 *_amd64.changes
+dist/
