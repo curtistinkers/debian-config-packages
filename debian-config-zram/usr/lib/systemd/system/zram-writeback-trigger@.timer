@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for trigger write-back of huge_idle pages on /dev/%i
+DefaultDependencies=false
+
+[Timer]
+Unit=zram-writeback-trigger@%i.service
+OnBootSec=30min
+OnUnitInactiveSec=1h
+
+[Install]
+WantedBy=timers.target

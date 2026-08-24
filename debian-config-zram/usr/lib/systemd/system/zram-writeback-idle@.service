@@ -1,0 +1,67 @@
+[Unit]
+Description=Mark 1h-stale pages on /dev/%i as idle
+
+DefaultDependencies=false
+
+After=dev-%i.device
+BindsTo=dev-%i.device
+
+After=systemd-modules-load.service
+Wants=systemd-modules-load.service
+
+ConditionPathExists=/sys/block/%i/idle
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/echo 3600
+StandardOutput=file:/sys/block/%i/idle
+StandardError=journal
+
+# Core Execution Identity
+User=root
+Group=root
+
+# Required to allow writing to /sys/block/
+PrivateDevices=no
+ProtectKernelTunables=no
+
+# Grant only the absolute minimum hardware tweak permission
+CapabilityBoundingSet=CAP_SYS_ADMIN
+AmbientCapabilities=CAP_SYS_ADMIN
+# Process and System Isolation
+
+ProtectProc=yes
+ProcSubset=none
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+PrivateUsers=yes
+PrivateTmp=yes
+
+# Filesystem Restrictions
+ProtectSystem=strict
+ReadWritePaths=/sys/block/%i/
+ProtectControlGroups=yes
+RemoveIPC=yes
+UMask=0077
+
+# Kernel & Privilege Restrictions
+NoNewPrivileges=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+
+# Network Isolation
+PrivateNetwork=yes
+RestrictAddressFamilies=none
+ProtectHostname=yes
+IPAddressDeny=any
+
+# System Architecture Protections
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+
+# Device and Hardware Isolation
+ProtectClock=yes
