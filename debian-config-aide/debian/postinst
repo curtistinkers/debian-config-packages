@@ -46,12 +46,12 @@ set_hookscript_permissions() {
 
 run_aide_init() {
     echo "${PACKAGE_NAME}: Initializing AIDE database. This could take awhile..."
-    /usr/bin/aide -c /etc/aide/aide.conf --init >/var/log/aide/aideinit.log 2>/var/log/aide/aideinit.errors
+    /usr/sbin/aideinit -y -f
 }
 
-copy_aide_database() {
-    echo "${PACKAGE_NAME}: Copying AIDE database file"
-    cp "${LIB_DIR}/aide.db.new" "${LIB_DIR}/aide.db"
+fix_aide_database_permissions() {
+    echo "${PACKAGE_NAME}: Fixing permissions on AIDE database file"
+    chown "${TARGET_USER}":"${TARGET_GROUP}" "${LIB_DIR}/aide.db"
 }
 
 # --- Main Logic Execution ---
@@ -63,9 +63,7 @@ case "$1" in
         set_lib_directory_permissions
 
         run_aide_init
-        copy_aide_database
-
-        set_lib_directory_permissions
+        fix_aide_database_permissions
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
