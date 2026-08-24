@@ -10,6 +10,7 @@ Package: debian-config-clamav
 Architecture: all
 Depends: 
  clamav,
+ clamav-base,
  clamav-freshclam,
  systemd,
  ${misc:Depends}
