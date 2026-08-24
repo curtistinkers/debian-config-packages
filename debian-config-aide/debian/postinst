@@ -46,7 +46,7 @@ set_hookscript_permissions() {
 
 run_aide_init() {
     echo "${PACKAGE_NAME}: Initializing AIDE database. This could take awhile..."
-    /usr/bin/aide -c /etc/aide/aide.conf --init
+    /usr/bin/aide -c /etc/aide/aide.conf --init >/var/log/aide/aideinit.log 2>/var/log/aide/aideinit.errors
 }
 
 copy_aide_database() {
