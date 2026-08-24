@@ -4,7 +4,7 @@
 set -e
 
 # --- Configuration ---
-TARGET_DIR="$1"
+TARGET_DIR="${1%/}"
 OUTPUT_DIR="$(pwd)/dist"
 
 # --- Validation ---
