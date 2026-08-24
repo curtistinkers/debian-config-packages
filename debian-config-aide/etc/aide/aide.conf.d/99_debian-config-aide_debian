@@ -29,6 +29,15 @@ UserHomeFile  = VarFile+ANF+ARF
 # Ignore everything inside the /tmp, /run directories
 !/(tmp|run)/.* =tmpfs
 
+# Systemd rules
+# -------------
+
+# Let systemd touch the folder
+=/var/lib/systemd/deb-systemd-helper-enabled$ d VarTime
+
+# Ignore when this specific systemd unit file when it's new
+=/var/lib/systemd/deb-systemd-helper-enabled/aide-boot-update.service\.dsh-also$ f Full+ANF
+
 # Logging rules
 # -------------
 
