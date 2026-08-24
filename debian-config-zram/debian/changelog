@@ -1,0 +1,7 @@
+debian-config-zram (1.0.0) trixie; urgency=low
+
+  * Initial package framework.
+  * Added systemd service and timer unit files for configuring a write-back device.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500

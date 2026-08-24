@@ -1,0 +1,14 @@
+Source: debian-config-zram
+Section: admin
+Priority: optional
+Maintainer: curtistinkers <curtistinkers@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+
+Package: debian-config-zram
+Architecture: all
+Depends: 
+ systemd-zram-generator,
+ ${misc:Depends}
+Description: Zram Configuration.
