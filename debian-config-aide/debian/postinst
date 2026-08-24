@@ -5,8 +5,12 @@ PACKAGE_NAME="debian-config-aide"
 
 # --- Helper Functions ---
 
-fix_permissions() {
+run_aideinit() {
+    echo "${PACKAGE_NAME}: Initializing AIDE database. This could take awhile..."
+    /usr/sbin/aideinit -y
+}
 
+fix_permissions() {
     LIB_DIR="/var/lib/aide"
     LOG_DIR="/var/log/aide"
     HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
@@ -27,31 +31,11 @@ fix_permissions() {
     fi
 }
 
-run_aideinit_as_aide_user() {
-    TARGET_USER="_aide"
-    TARGET_GROUP="_aide"
-
-    # 1. Resolve UID and GID for capsh
-    USER_UID=$(id -u "${TARGET_USER}")
-    USER_GID=$(id -g "${TARGET_GROUP}")
-
-    echo "Initializing AIDE database as user ${TARGET_USER}..."
-
-    # 2. Execute AIDE using capsh with dropped privileges but kept capabilities
-    capsh \
-      --inh="cap_dac_read_search,cap_audit_write" \
-      --addamb="cap_dac_read_search,cap_audit_write" \
-      --keep=1 \
-      --uid="${USER_UID}" \
-      --gid="${USER_GID}" \
-      -- -c "aideinit -y -f"
-}
-
 # --- Main Logic Execution ---
 
 case "$1" in
     configure)
-        run_aideinit_as_aide_user
+        run_aideinit
         fix_permissions
         ;;
 
