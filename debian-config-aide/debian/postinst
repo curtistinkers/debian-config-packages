@@ -1,38 +1,21 @@
 #!/bin/sh
 set -e
 
-PACKAGE_NAME="debian-config-aide"
+# --- Script Variables
 
-# --- Helper Functions ---
+PACKAGE_NAME="debian-config-aide"
 
 TARGET_USER="_aide"
 TARGET_GROUP="_aide"
 
-set_hookscript_permissions() {
-    HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
+LIB_DIR="/var/lib/aide"
+LOG_DIR="/var/log/aide"
 
-    if [ -f "${HOOK_SCRIPT}" ]; then
-        echo "${PACKAGE_NAME}: Setting AIDE hookscript permissions on ${HOOK_SCRIPT}"
-        chown "${TARGET_USER}":"${TARGET_GROUP}" "${HOOK_SCRIPT}"
-    fi
-}
+UPDATE_HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
 
-set_log_directory_permissions() {
-    LOG_DIR="/var/log/aide"
-
-    if [ -d "${LOG_DIR}" ]; then
-        echo "${PACKAGE_NAME}: Setting AIDE log directory permissions on ${LOG_DIR}"
-        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
-    else
-        echo "${PACKAGE_NAME}: Creating AIDE log directory at ${LOG_DIR}"
-        mkdir -p "${LOG_DIR}"
-        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
-    fi
-}
+# --- Helper Functions ---
 
 set_lib_directory_permissions() {
-    LIB_DIR="/var/lib/aide"
-
     if [ -d "${LIB_DIR}" ]; then
         echo "${PACKAGE_NAME}: Setting AIDE library directory permissions at ${LIB_DIR}"
         chown "${TARGET_USER}":"${TARGET_GROUP}" -R "${LIB_DIR}"
@@ -43,9 +26,32 @@ set_lib_directory_permissions() {
     fi
 }
 
-run_aideinit() {
+set_log_directory_permissions() {
+    if [ -d "${LOG_DIR}" ]; then
+        echo "${PACKAGE_NAME}: Setting AIDE log directory permissions on ${LOG_DIR}"
+        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
+    else
+        echo "${PACKAGE_NAME}: Creating AIDE log directory at ${LOG_DIR}"
+        mkdir -p "${LOG_DIR}"
+        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
+    fi
+}
+
+set_hookscript_permissions() {
+    if [ -f "${UPDATE_HOOK_SCRIPT}" ]; then
+        echo "${PACKAGE_NAME}: Setting AIDE hookscript permissions on ${UPDATE_HOOK_SCRIPT}"
+        chown "${TARGET_USER}":"${TARGET_GROUP}" "${UPDATE_HOOK_SCRIPT}"
+    fi
+}
+
+run_aide_init() {
     echo "${PACKAGE_NAME}: Initializing AIDE database. This could take awhile..."
-    /usr/sbin/aideinit -y
+    /usr/bin/aide -c /etc/aide/aide.conf --init
+}
+
+copy_aide_database() {
+    echo "${PACKAGE_NAME}: Copying AIDE database file"
+    cp "${LIB_DIR}/aide.db.new" "${LIB_DIR}/aide.db"
 }
 
 # --- Main Logic Execution ---
@@ -56,7 +62,8 @@ case "$1" in
         set_log_directory_permissions
         set_lib_directory_permissions
 
-        run_aideinit
+        run_aide_init
+        copy_aide_database
 
         set_lib_directory_permissions
         ;;
