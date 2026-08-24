@@ -5,38 +5,60 @@ PACKAGE_NAME="debian-config-aide"
 
 # --- Helper Functions ---
 
+TARGET_USER="_aide"
+TARGET_GROUP="_aide"
+
+set_hookscript_permissions() {
+    HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
+
+    if [ -f "${HOOK_SCRIPT}" ]; then
+        echo "${PACKAGE_NAME}: Setting AIDE hookscript permissions on ${HOOK_SCRIPT}"
+        chown "${TARGET_USER}":"${TARGET_GROUP}" "${HOOK_SCRIPT}"
+    fi
+}
+
+set_log_directory_permissions() {
+    LOG_DIR="/var/log/aide"
+
+    if [ -d "${LOG_DIR}" ]; then
+        echo "${PACKAGE_NAME}: Setting AIDE log directory permissions on ${LOG_DIR}"
+        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
+    else
+        echo "${PACKAGE_NAME}: Creating AIDE log directory at ${LOG_DIR}"
+        mkdir -p "${LOG_DIR}"
+        chown "${TARGET_USER}":adm -R "${LOG_DIR}"
+    fi
+}
+
+set_lib_directory_permissions() {
+    LIB_DIR="/var/lib/aide"
+
+    if [ -d "${LIB_DIR}" ]; then
+        echo "${PACKAGE_NAME}: Setting AIDE library directory permissions at ${LIB_DIR}"
+        chown "${TARGET_USER}":"${TARGET_GROUP}" -R "${LIB_DIR}"
+    else
+        echo "${PACKAGE_NAME}: Creating AIDE library directory at ${LIB_DIR}"
+        mkdir -p "${LIB_DIR}"
+        chown "${TARGET_USER}":"${TARGET_GROUP}" -R "${LIB_DIR}"
+    fi
+}
+
 run_aideinit() {
     echo "${PACKAGE_NAME}: Initializing AIDE database. This could take awhile..."
     /usr/sbin/aideinit -y
-}
-
-fix_permissions() {
-    LIB_DIR="/var/lib/aide"
-    LOG_DIR="/var/log/aide"
-    HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
-
-    if [ -d "${LIB_DIR}" ]; then
-        echo "${PACKAGE_NAME}: Fixing permissions on ${LIB_DIR}"
-        chown _aide:_aide -R "${LIB_DIR}"
-    fi
-
-    if [ -d "${LOG_DIR}" ]; then
-        echo "${PACKAGE_NAME}: Fixing permissions on ${LOG_DIR}"
-        chown _aide:adm -R "${LOG_DIR}"
-    fi
-
-    if [ -f "${HOOK_SCRIPT}" ]; then
-        echo "${PACKAGE_NAME}: Fixing permissions on ${HOOK_SCRIPT}"
-        chown _aide:_aide "${HOOK_SCRIPT}"
-    fi
 }
 
 # --- Main Logic Execution ---
 
 case "$1" in
     configure)
+        set_hookscript_permissions
+        set_log_directory_permissions
+        set_lib_directory_permissions
+
         run_aideinit
-        fix_permissions
+
+        set_lib_directory_permissions
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
