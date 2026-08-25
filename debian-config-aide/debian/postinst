@@ -6,7 +6,6 @@ set -e
 PACKAGE_NAME="debian-config-aide"
 
 TARGET_USER="_aide"
-TARGET_GROUP="_aide"
 
 LIB_DIR="/var/lib/aide"
 LOG_DIR="/var/log/aide"
@@ -18,29 +17,29 @@ UPDATE_HOOK_SCRIPT="/usr/libexec/debian-config-aide/aide-update-hook.sh"
 set_lib_directory_permissions() {
     if [ -d "${LIB_DIR}" ]; then
         echo "${PACKAGE_NAME}: Setting AIDE library directory permissions at ${LIB_DIR}"
-        chown "${TARGET_USER}":"${TARGET_GROUP}" "${LIB_DIR}"
+        chown "${TARGET_USER}" "${LIB_DIR}"
     else
         echo "${PACKAGE_NAME}: Creating AIDE library directory at ${LIB_DIR}"
         mkdir -p "${LIB_DIR}"
-        chown "${TARGET_USER}":"${TARGET_GROUP}" "${LIB_DIR}"
+        chown "${TARGET_USER}" "${LIB_DIR}"
     fi
 }
 
 set_log_directory_permissions() {
     if [ -d "${LOG_DIR}" ]; then
         echo "${PACKAGE_NAME}: Setting AIDE log directory permissions on ${LOG_DIR}"
-        chown "${TARGET_USER}":adm "${LOG_DIR}"
+        chown "${TARGET_USER}" "${LOG_DIR}"
     else
         echo "${PACKAGE_NAME}: Creating AIDE log directory at ${LOG_DIR}"
         mkdir -p "${LOG_DIR}"
-        chown "${TARGET_USER}":adm "${LOG_DIR}"
+        chown "${TARGET_USER}" "${LOG_DIR}"
     fi
 }
 
 set_hookscript_permissions() {
     if [ -f "${UPDATE_HOOK_SCRIPT}" ]; then
         echo "${PACKAGE_NAME}: Setting AIDE hookscript permissions on ${UPDATE_HOOK_SCRIPT}"
-        chown "${TARGET_USER}":"${TARGET_GROUP}" "${UPDATE_HOOK_SCRIPT}"
+        chown "${TARGET_USER}" "${UPDATE_HOOK_SCRIPT}"
     fi
 }
 
@@ -51,7 +50,7 @@ run_aide_init() {
 
 fix_aide_database_permissions() {
     echo "${PACKAGE_NAME}: Fixing permissions on AIDE database file"
-    chown "${TARGET_USER}":"${TARGET_GROUP}" "${LIB_DIR}/aide.db"
+    chown "${TARGET_USER}" "${LIB_DIR}/aide.db"
 }
 
 # --- Main Logic Execution ---
