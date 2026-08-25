@@ -1,0 +1,48 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-zram"
+SCRIPT_NAME="postinst"
+
+# --- Helper Functions ---
+
+start_zram_generator_service() {
+    if [ -x "/bin/systemctl" ]; then
+        if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+		    if systemctl is-active --quiet systemd-zram-setup@zram0.service; then
+			    echo "${PACKAGE_NAME}: Restarting zram0 systemd-zram-setup service..."
+				deb-systemd-invoke stop systemd-zram-setup@zram0.service >/dev/null || true
+            else
+                echo "${PACKAGE_NAME}: Starting zram0 systemd-zram-setup service..."
+			fi
+            deb-systemd-invoke start systemd-zram-setup@zram0.service >/dev/null || true
+		fi
+	fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    configure)
+        start_zram_generator_service
+        ;;
+
+    triggered|abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0
