@@ -1,0 +1,90 @@
+#!/bin/bash
+# ==============================================================================
+# REFACTORED ZRAM & WRITEBACK ANALYTICS INTERPRETER (WITH COMPRESSION ALGORITHM)
+# ==============================================================================
+set -euo pipefail
+
+ZRAM_DIR="/sys/block/zram0"
+
+if [ ! -d "$ZRAM_DIR" ]; then
+    echo "Error: /dev/zram0 is not initialized or active."
+    exit 1
+fi
+
+human_size() {
+    local bytes=$1
+    if [ "$bytes" -ge 1073741824 ]; then
+        echo "$(awk "BEGIN {printf \"%.2f\", $bytes/1073741824}") GiB"
+    elif [ "$bytes" -ge 1048576 ]; then
+        echo "$(awk "BEGIN {printf \"%.2f\", $bytes/1048576}") MiB"
+    elif [ "$bytes" -ge 1024 ]; then
+        echo "$(awk "BEGIN {printf \"%.2f\", $bytes/1024}") KiB"
+    else
+        echo "$bytes Bytes"
+    fi
+}
+
+# --- 1. HARVEST RAW STATS VIA ARBITRARY AWK INDEXING ---
+PAGE_SIZE=$(getconf PAGESIZE)
+
+# Extract by explicit index location from mm_stat
+orig_size=$(awk '{print $1}' "$ZRAM_DIR/mm_stat")
+comp_size=$(awk '{print $2}' "$ZRAM_DIR/mm_stat")
+mem_max=$(awk '{print $5}' "$ZRAM_DIR/mm_stat")
+same_pages=$(awk '{print $6}' "$ZRAM_DIR/mm_stat")
+huge_pages=$(awk '{print $8}' "$ZRAM_DIR/mm_stat")
+
+# Extract from bd_stat
+bd_count=$(awk '{print $1}' "$ZRAM_DIR/bd_stat")
+bd_reads=$(awk '{print $2}' "$ZRAM_DIR/bd_stat")
+bd_writes=$(awk '{print $3}' "$ZRAM_DIR/bd_stat")
+
+# Extract from io_stat
+io_reads=$(awk '{print $1}' "$ZRAM_DIR/io_stat")
+io_writes=$(awk '{print $2}' "$ZRAM_DIR/io_stat")
+io_fail_read=$(awk '{print $3}' "$ZRAM_DIR/io_stat")
+io_fail_write=$(awk '{print $4}' "$ZRAM_DIR/io_stat")
+io_invalid=$(awk '{print $5}' "$ZRAM_DIR/io_stat")
+
+# Extract the currently active compression algorithm enclosed in brackets [...]
+active_algo=$(grep -o '\[[^]]*\]' "$ZRAM_DIR/comp_algorithm" | tr -d '[]')
+
+# --- 2. CALCULATE DERIVATIVES ---
+HUGE_BYTES=$((huge_pages * PAGE_SIZE))
+EVICTED_BYTES=$((bd_count * PAGE_SIZE))
+SAVINGS_BYTES=$((orig_size - comp_size))
+
+if [ "$comp_size" -gt 0 ]; then
+    COMP_RATIO=$(awk "BEGIN {printf \"%.2f\", $orig_size/$comp_size}")
+else
+    COMP_RATIO="0.00"
+fi
+
+# --- 3. PRINT FORMAT INTERPRETER ---
+echo "======================================================================"
+echo "                   ZRAM RUNTIME INSTANCE ANALYTICS                     "
+echo "======================================================================"
+echo "[-] Core Memory Footprint Allocations:"
+echo "    ├── Active Compression Type:             ${active_algo^^}"
+echo "    ├── Uncompressed Data Size (Virtual):    $(human_size "$orig_size")"
+echo "    ├── Compressed Size (Physical RAM Used):  $(human_size "$comp_size")"
+echo "    ├── Total Space Saved inside RAM:        $(human_size "$SAVINGS_BYTES")"
+echo "    ├── Real-Time RAM Compression Ratio:     ${COMP_RATIO}:1"
+echo "    └── Peak Maximum RAM Ever Occupied:      $(human_size "$mem_max")"
+echo ""
+echo "[-] Efficiency Profiles:"
+echo "    ├── Identical/Duplicate Pages Dropped:   $same_pages"
+echo "    └── Incompressible (Huge) Pages in RAM:  $huge_pages ($(human_size "$HUGE_BYTES"))"
+echo ""
+echo "======================================================================"
+echo "                  SECONDARY WRITEBACK DEVICE METRICS                  "
+echo "======================================================================"
+echo "[-] Persistent Disk Offloading Activity:"
+echo "    ├── Current Pages Evicted to Disk:       $bd_count ($(human_size "$EVICTED_BYTES"))"
+echo "    ├── Total Blocks Written to NVMe/SSD:    $bd_writes"
+echo "    └── Total Blocks Read Back from Disk:    $bd_reads"
+echo ""
+echo "[-] Driver Integrity Sanity Checks:"
+echo "    ├── Operational I/O Failures:            $((io_fail_read + io_fail_write))"
+echo "    └── Corrupt/Invalid Requests:            $io_invalid"
+echo "======================================================================"

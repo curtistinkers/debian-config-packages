@@ -1,0 +1,399 @@
+#!/bin/bash
+# ==============================================================================
+# SECURE SYSTEMD-CRYPTSETUP AUTOMATED ZRAM PROVISIONER (JQ TYPE-FIXED)
+# ==============================================================================
+set -euo pipefail
+
+# --- GLOBAL PATH DESTINATIONS ---
+ZRAM_CONFIG="/etc/systemd/zram-generator.conf"
+CRYPT_CONFIG="/etc/crypttab"
+TARGET_LABEL="zram0-wb"
+RAW_LABEL_PATH="/dev/disk/by-partlabel/$TARGET_LABEL"
+CRYPTO_MAP_NAME="zram0-wb-crypt"
+DECRYPTED_PATH="/dev/mapper/$CRYPTO_MAP_NAME"
+
+# Explicitly escape the hyphen for systemd unit path tracking properties (\x2d)
+SYSTEMD_CRYPT_SERVICE="systemd-cryptsetup@zram0\\x2dwb\\x2dcrypt.service"
+
+# ------------------------------------------------------------------------------
+# MODULE 1: PRIVILEGE AND DEPENDENCY CHECK
+# ------------------------------------------------------------------------------
+check_environment() {
+    if [ "$EUID" -ne 0 ]; then
+        whiptail --title "Permission Denied" --msgbox "This utility requires root privileges.\nPlease run using 'sudo'." 10 60
+        exit 1
+    fi
+
+    # Target systemd-cryptsetup core generator files natively
+    if [ ! -f "/lib/systemd/system-generators/systemd-cryptsetup-generator" ]; then
+        if whiptail --title "Missing Systemd-Cryptsetup" --yesno \
+"The 'systemd-cryptsetup' environment package was not discovered on this image.\n\n\
+Would you like to automatically run 'apt update && apt install systemd-cryptsetup'?" 13 75; then
+            whiptail --title "Installing Dependencies" --infobox "Deploying systemd-cryptsetup infrastructure..." 8 60
+            apt-get update -qq
+            apt-get install -y -qq systemd-cryptsetup jq
+        else
+            whiptail --title "Aborted" --msgbox "Required systemd dependency missing. Aborting." 8 55
+            exit 1
+        fi
+    fi
+    
+    if ! command -v jq &>/dev/null; then
+        apt-get install -y -qq jq
+    fi
+
+    # Ensure the zram module is loaded so we can read available algorithms
+    if [ ! -d "/sys/block/zram0" ]; then
+        modprobe zram
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# SUBSYSTEM HELPER FUNCTIONS FOR DEVICE EXTRACTION
+# ------------------------------------------------------------------------------
+
+get_active_encrypted_device() {
+    # Guard Gate: If dmsetup table is empty, stop immediately and return nothing
+    if [ -z "$(sudo dmsetup table 2>/dev/null)" ]; then
+        return 0
+    fi
+
+    local enc_partition=""
+    # Run your exact command to locate the active encrypted partition block
+    enc_partition=$(sudo lsblk -po NAME,TYPE | grep "$(sudo dmsetup table | awk '{print $4}')" -B 1 | head -n 1 | awk '{print $1}')
+
+    if [ -n "$enc_partition" ]; then
+        # Strip any tree formatting characters (like └─ or ├─) to isolate the raw path
+        enc_partition=$(echo "$enc_partition" | grep -o '/dev/[a-zA-Z0-9]*' || true)
+        
+        # Double check that we actually isolated a real file path string before outputting
+        if [ -n "$enc_partition" ]; then
+            echo "$enc_partition" "Encrypted Drive/Partition"
+        fi
+    fi
+}
+
+get_active_swap_devices() {
+    # Isolate active swap partitions, strip tree formatting, and avoid listing zram devices
+    sudo lsblk -po NAME,FSTYPE,MOUNTPOINT | grep "swap" | grep "\[SWAP\]" | grep -v "zram" | while read -r line; do
+        local swap_partition
+        swap_partition=$(echo "$line" | awk '{print $1}' | grep -o '/dev/[a-zA-Z0-9]*' || true)
+        
+        if [ -n "$swap_partition" ]; then
+            echo "$swap_partition" "Active Swap Drive/Partition"
+        fi
+    done
+}
+
+get_unformatted_devices() {
+    # 1. Capture the exact clean path from the encrypted device helper function
+    local enc_partition=""
+    enc_partition=$(get_active_encrypted_device | awk '{print $1}')
+
+    # 2. Loop through partitions to isolate truly unformatted storage
+    sudo lsblk -pbP -o NAME,FSTYPE,MOUNTPOINT,TYPE | grep 'TYPE="part"' | grep -v 'NAME=".*zram.*"' | while read -r line; do
+        [ -z "$line" ] && continue
+        eval "$line"
+        
+        # Strip tree formatting characters to get the raw clean partition path
+        local clean_path
+        clean_path=$(echo "$NAME" | grep -o '/dev/[a-zA-Z0-9]*')
+
+        # Filter Gate: If this path matches your encrypted helper output, exclude it completely
+        if [ -n "$enc_partition" ] && [ "$clean_path" = "$enc_partition" ]; then
+            continue
+        fi
+
+        # If it is not encrypted and both tracking fields are empty, output it cleanly
+        if [ -z "$FSTYPE" ] && [ -z "$MOUNTPOINT" ]; then
+            echo "$clean_path" "Unformatted Drive/Partition"
+        fi
+    done
+}
+
+get_inactive_swap_devices() {
+    # 1. Capture the exact clean path from the encrypted device helper function to filter it out
+    local enc_partition=""
+    enc_partition=$(get_active_encrypted_device | awk '{print $1}')
+
+    # 2. Look for partitions where FSTYPE is swap but MOUNTPOINT is completely empty
+    sudo lsblk -pbP -o NAME,FSTYPE,MOUNTPOINT,TYPE | grep 'TYPE="part"' | grep -v 'NAME=".*zram.*"' | while read -r line; do
+        [ -z "$line" ] && continue
+        eval "$line"
+
+        # Strip tree formatting characters to get the raw clean partition path
+        local clean_path
+        clean_path=$(echo "$NAME" | grep -o '/dev/[a-zA-Z0-9]*')
+
+        # Filter Gate: If this path matches your encrypted helper output, exclude it completely
+        if [ -n "$enc_partition" ] && [ "$clean_path" = "$enc_partition" ]; then
+            continue
+        fi
+
+        # If FSTYPE is swap and MOUNTPOINT is totally blank, it is an inactive swap target
+        if [ "$FSTYPE" = "swap" ] && [ -z "$MOUNTPOINT" ]; then
+            echo "$clean_path" "Inactive Swap Drive/Partition"
+        fi
+    done
+}
+
+# ------------------------------------------------------------------------------
+# MODULE2: MAIN EXTRACTION DISPATCHER
+# ------------------------------------------------------------------------------
+get_eligible_devices() {
+    # Call each clean, dedicated helper function sequentially to build the final menu screen list
+    get_unformatted_devices
+    get_inactive_swap_devices
+    get_active_swap_devices
+    get_active_encrypted_device
+}
+
+# ------------------------------------------------------------------------------
+# MODULE 3: INTERACTIVE USER LAYERS
+# ------------------------------------------------------------------------------
+show_welcome() {
+    whiptail --title "ZRAM Writeback Setup Walkthrough" --msgbox \
+"Welcome to the text-mode ZRAM Encrypted Writeback Setup.\n\n\
+This tool configures an ephemeral, randomly encrypted plain swap-dump zone via /etc/crypttab.\n\n\
+All tasks are executed via isolated, atomic functions." 14 70
+}
+
+select_block_device() {
+    local raw_devices
+    raw_devices=$(get_eligible_devices)
+    
+    if [ -z "$raw_devices" ]; then
+        whiptail --title "Storage Error" --msgbox "No eligible raw partition structures found." 8 55
+        exit 1
+    fi
+
+    local choices=()
+    while read -r path status; do
+        choices+=("$path" "$status")
+    done <<< "$raw_devices"
+
+    whiptail --title "Target Block Selection" --menu \
+"Select target volume partition. Active crypto devices are marked with a lock icon:" 18 75 8 "${choices[@]}" 3>&1 1>&2 2>&3
+}
+
+handle_swap_state() {
+    local target_dev=$1
+    if swapon --show=NAME --noheadings | grep -q "^${target_dev}$"; then
+        if whiptail --title "Active Swap Discovered" --yesno \
+"Device $target_dev is currently active.\n\n\
+Would you like to automatically execute 'swapoff' to safely unmount it right now?" 12 70; then
+            swapoff "$target_dev"
+        else
+            whiptail --title "Process Halting" --msgbox "Cannot mount an active device layer. Operation aborted." 8 65
+            exit 1
+        fi
+    fi
+}
+
+select_crypto_cipher() {
+    whiptail --title "Select Encryption Protocol" --menu \
+"Choose an ephemeral cipher strength for the plain random layout:" 15 65 2 \
+        "AES-128" "Fastest encryption" \
+        "AES-256" "Higher security encryption" 3>&1 1>&2 2>&3
+}
+
+select_compression_algorithm() {
+    local algo_file="/sys/block/zram0/comp_algorithm"
+    local algos
+    if [ ! -f "$algo_file" ]; then
+        algos="lz4 zstd lzo"
+    else
+        algos=$(tr -d '[]' < "$algo_file")
+    fi
+
+    local choices=()
+    for algo in $algos; do
+        if [ "$algo" = "zstd" ]; then
+            choices+=("$algo" "Highly optimized balance (Recommended)")
+        elif [ "$algo" = "lz4" ]; then
+            choices+=("$algo" "Fastest processing raw speed")
+        else
+            choices+=("$algo" "Kernel supported algorithm option")
+        fi
+    done
+
+    whiptail --title "Select Compression Algorithm" --menu \
+"Choose one of your kernel's native compression algorithms to apply to the ZRAM instance:" 16 75 4 "${choices[@]}" 3>&1 1>&2 2>&3
+}
+
+# ------------------------------------------------------------------------------
+# MODULE 4: SYSTEMD PROVISIONING ENGINES
+# ------------------------------------------------------------------------------
+apply_persistent_label() {
+    local dev=$1
+    whiptail --title "Partition Label Masking" --infobox "Injecting permanent GPT partlabel '$TARGET_LABEL'..." 8 60
+    
+    if ! sfdisk --part-label "$dev" 1 "$TARGET_LABEL" 2>/dev/null; then
+        mkdir -p /dev/disk/by-partlabel/
+        ln -sf "$dev" "$RAW_LABEL_PATH"
+    fi
+    udevadm settle
+}
+
+write_crypttab_rule() {
+    local cipher_selection=$1
+    local cipher_type="aes-xts-plain64"
+    local key_size
+
+    if [ "$cipher_selection" = "AES-128" ]; then
+        key_size="256"
+    else
+        key_size="512"
+    fi
+
+    whiptail --title "Writing Security Maps" --infobox "Registering target configuration mapping rules into $CRYPT_CONFIG..." 8 60
+
+    sed -i "/$CRYPTO_MAP_NAME/d" "$CRYPT_CONFIG"
+    echo "$CRYPTO_MAP_NAME $RAW_LABEL_PATH /dev/urandom plain,cipher=$cipher_type,size=$key_size,swap" >> "$CRYPT_CONFIG"
+    
+    whiptail --title "Systemd Engine Active" --infobox "Invoking native systemd-cryptsetup-generator maps..." 8 65
+    
+    systemctl daemon-reload
+    systemctl restart "$SYSTEMD_CRYPT_SERVICE"
+    udevadm settle
+}
+
+# ------------------------------------------------------------------------------
+# FILE HANDLING HELPER FUNCTIONS
+# ------------------------------------------------------------------------------
+
+modify_or_create_zram_config() {
+    local chosen_algo=$1
+    local backing_path=$2
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Core parameters to inject
+    local algo_line="compression-algorithm = $chosen_algo"
+    local wb_line="writeback-device = $backing_path"
+
+    # Base Target Profile if the file or block doesn't exist yet
+    if [ ! -f "$ZRAM_CONFIG" ] || ! grep -q "^\[zram0\]" "$ZRAM_CONFIG"; then
+        whiptail --title "Writing Generator Instructions" --infobox "Generating fresh configuration file..." 8 60
+        {
+            [ -f "$ZRAM_CONFIG" ] && cat "$ZRAM_CONFIG"
+            echo -e "\n[zram0]"
+            echo "zram-size = ram / 2"
+            echo "$algo_line"
+            echo "$wb_line"
+        } > "$temp_file"
+        mv "$temp_file" "$ZRAM_CONFIG"
+        return 0
+    fi
+
+    whiptail --title "Modifying Generator Instructions" --infobox "Surgically modifying [zram0] settings in place..." 8 65
+
+    # Process the existing configuration file row by row to locate our target block
+    awk -v target="[zram0]" -v algo="$algo_line" -v wb="$wb_line" '
+    BEGIN { in_target = 0; wrote_algo = 0; wrote_wb = 0 }
+    
+    # Detect when a block header starts
+    /^\[.*\]/ {
+        if (in_target) {
+            # If we are exiting our target section without writing our updates, inject them now
+            if (!wrote_algo) print algo
+            if (!wrote_wb) print wb
+            in_target = 0
+        }
+        if ($0 == target) {
+            in_target = 1
+            print $0
+            next
+        }
+    }
+    
+    # Filter keys inside our target section block
+    in_target {
+        if ($0 ~ /^compression-algorithm[ \t]*=/) {
+            print algo
+            wrote_algo = 1
+            next
+        }
+        if ($0 ~ /^writeback-device[ \t]*=/) {
+            print wb
+            wrote_wb = 1
+            next
+        }
+    }
+    
+    { print $0 }
+    
+    END {
+        # Catch-all if the target block was at the absolute bottom of the file
+        if (in_target) {
+            if (!wrote_algo) print algo
+            if (!wrote_wb) print wb
+        }
+    }' "$ZRAM_CONFIG" > "$temp_file"
+
+    mv "$temp_file" "$ZRAM_CONFIG"
+}
+
+write_zram_config() {
+    local chosen_algo=$1
+    
+    # Execute the surgical mod handler instead of using cat redirect clobbering
+    modify_or_create_zram_config "$chosen_algo" "$DECRYPTED_PATH"
+}
+
+restart_services() {
+    whiptail --title "Reloading Engine Targets" --infobox "Tearing down and resetting ZRAM layout graph dependencies..." 8 65
+    
+    systemctl daemon-reload
+    systemctl stop systemd-zram-setup@zram0.service || true
+    systemctl start systemd-zram-setup@zram0.service
+    
+    whiptail --title "Configuring Writeback Timers" --infobox "Enabling and initiating systemd writeback monitor loops..." 8 65
+    
+    local timer_units=(
+        "zram-writeback-idle@zram0.timer"
+        "zram-writeback-limit@zram0.timer"
+        "zram-writeback-trigger@zram0.timer"
+    )
+    
+    for timer in "${timer_units[@]}"; do
+        systemctl enable "$timer" &>/dev/null || true
+        systemctl start "$timer" &>/dev/null || true
+    done
+}
+
+# ------------------------------------------------------------------------------
+# CORE CONTROL DISPATCHER
+# ------------------------------------------------------------------------------
+main() {
+    check_environment
+    show_welcome
+    
+    local DEV
+    DEV=$(select_block_device)
+    [ -z "$DEV" ] && exit 0
+    
+    handle_swap_state "$DEV"
+    
+    local CIPHER
+    CIPHER=$(select_crypto_cipher)
+    [ -z "$CIPHER" ] && exit 0
+
+    local ALGO
+    ALGO=$(select_compression_algorithm)
+    [ -z "$ALGO" ] && exit 0
+    
+    apply_persistent_label "$DEV"
+    write_crypttab_rule "$CIPHER"
+    write_zram_config "$ALGO"
+    restart_services
+    
+    whiptail --title "Deployment Successful" --msgbox \
+"Success! Your ZRAM Encrypted Writeback is running.\n\n\
+Structural Identity Path: $RAW_LABEL_PATH\n\
+Active Crypto Container: $DECRYPTED_PATH\n\
+Config File Applied: $ZRAM_CONFIG\n\n\
+Your background automated eviction tracking timers are enabled and fully active." 16 75
+}
+
+main
