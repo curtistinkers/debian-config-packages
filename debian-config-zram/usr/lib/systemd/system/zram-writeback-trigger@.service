@@ -32,8 +32,8 @@ CapabilityBoundingSet=CAP_SYS_ADMIN
 AmbientCapabilities=CAP_SYS_ADMIN
 # Process and System Isolation
 
-ProtectProc=yes
-ProcSubset=none
+ProtectProc=invisible 
+ProcSubset=pid
 ProtectHome=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes
