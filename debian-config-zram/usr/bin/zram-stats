@@ -40,11 +40,10 @@ bd_reads=$(awk '{print $2}' "$ZRAM_DIR/bd_stat")
 bd_writes=$(awk '{print $3}' "$ZRAM_DIR/bd_stat")
 
 # Extract from io_stat
-io_reads=$(awk '{print $1}' "$ZRAM_DIR/io_stat")
-io_writes=$(awk '{print $2}' "$ZRAM_DIR/io_stat")
-io_fail_read=$(awk '{print $3}' "$ZRAM_DIR/io_stat")
-io_fail_write=$(awk '{print $4}' "$ZRAM_DIR/io_stat")
-io_invalid=$(awk '{print $5}' "$ZRAM_DIR/io_stat")
+io_fail_read=$(awk '{print $1}' "$ZRAM_DIR/io_stat")
+io_fail_write=$(awk '{print $2}' "$ZRAM_DIR/io_stat")
+io_invalid=$(awk '{print $3}' "$ZRAM_DIR/io_stat")
+io_pages_freed=$(awk '{print $4}' "$ZRAM_DIR/io_stat")
 
 # Extract the currently active compression algorithm enclosed in brackets [...]
 active_algo=$(grep -o '\[[^]]*\]' "$ZRAM_DIR/comp_algorithm" | tr -d '[]')
@@ -81,10 +80,11 @@ echo "                  SECONDARY WRITEBACK DEVICE METRICS                  "
 echo "======================================================================"
 echo "[-] Persistent Disk Offloading Activity:"
 echo "    ├── Current Pages Evicted to Disk:       $bd_count ($(human_size "$EVICTED_BYTES"))"
-echo "    ├── Total Blocks Written to NVMe/SSD:    $bd_writes"
-echo "    └── Total Blocks Read Back from Disk:    $bd_reads"
+echo "    ├── Total Blocks Written to Disk:        $bd_writes"
+echo "    └── Total Blocks Read from Disk:         $bd_reads"
 echo ""
-echo "[-] Driver Integrity Sanity Checks:"
-echo "    ├── Operational I/O Failures:            $((io_fail_read + io_fail_write))"
-echo "    └── Corrupt/Invalid Requests:            $io_invalid"
+echo "[-] Input/Output Statistics:"
+echo "    ├── I/O Failures:                        $((io_fail_read + io_fail_write))"
+echo "    └── Invalid Requests:                    $io_invalid"
+echo "    └── Freed pages:                         $io_pages_freed"
 echo "======================================================================"
