@@ -1,0 +1,55 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-log2ram"
+SCRIPT_NAME="prerm"
+
+# --- Helper Functions ---
+
+revert_log2ram_config() {
+    local config_file="/etc/log2ram.conf"
+    [ -f "$config_file" ] || return 0
+
+    sed -i -E 's/^[#[:space:]]*SIZE=.*/SIZE=128M/' "$config_file"
+    sed -i -E 's/^[#[:space:]]*ZL2R=.*/ZL2R=false/' "$config_file"
+    sed -i -E 's/^[#[:space:]]*COMP_ALG=.*/COMP_ALG=lz4/' "$config_file"
+    sed -i -E 's/^[#[:space:]]*LOG_DISK_SIZE=.*/LOG_DISK_SIZE=256M/' "$config_file"
+}
+
+restart_log2ram_service() {
+    # If deb-systemd-invoke exists, systemctl also exists.
+    if command -v deb-systemd-invoke >/dev/null 2>&1; then
+        # Check if active, silencing PID 1/DBus errors in containers or chroots
+        if systemctl is-active --quiet log2ram.service 2>/dev/null; then
+            deb-systemd-invoke restart log2ram.service >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    remove)
+        revert_log2ram_config
+        restart_log2ram_service
+        ;;
+
+	upgrade|failed-upgrade)
+	    ;;
+
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+        
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

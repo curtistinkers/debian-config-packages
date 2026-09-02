@@ -1,0 +1,49 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-log2ram"
+SCRIPT_NAME="preinst"
+
+# --- Helper Functions ---
+
+enable_earlyoom_service() {
+    if [ -x "/usr/bin/deb-systemd-helper" ]; then
+        echo "${PACKAGE_NAME}: Enabling earlyoom service..."
+        deb-systemd-helper enable earlyoom.service >/dev/null || true
+    fi
+}
+
+start_earlyoom_service() {
+    if [ -x "/usr/bin/deb-systemd-invoke" ]; then
+        echo "${PACKAGE_NAME}: Starting earlyoom service..."
+        deb-systemd-invoke start earlyoom.service >/dev/null || true
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    install|upgrade)
+        enable_earlyoom_service
+        start_earlyoom_service
+        ;;
+
+	abort-upgrade)
+        ;;
+        
+    *)
+        if [ "${1}" = '' ]; then
+            ARG="none"
+        else
+            ARG="${1}"
+        fi
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,16 @@
+Source: debian-config-log2ram
+Section: admin
+Priority: optional
+Maintainer: curtistinkers <curtistinkers@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+
+Package: debian-config-log2ram
+Architecture: all
+Depends:
+ log2ram (>= 1.7),
+ ${misc:Depends}
+Description: Custom zram configuration for log2ram
+ This package configures log2ram to use zstd compression,
+ increases available log memory size, and enables ZL2R (zram) support.
