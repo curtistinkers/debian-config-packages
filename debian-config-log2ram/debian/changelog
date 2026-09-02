@@ -3,4 +3,4 @@ debian-config-log2ram (1.0.0) trixie; urgency=low
   * Initial package framework.
     (Closes: #100000)
 
- -- curtistinkers <curtistinkers@gmail.com>  Tue, 01 Sept 2026 20:38:40 -0500
+ -- curtistinkers <curtistinkers@gmail.com>  Tue, 01 Sep 2026 20:38:40 -0500
