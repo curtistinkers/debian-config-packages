@@ -1,0 +1,6 @@
+debian-config-lowmem (1.0.0) trixie; urgency=low
+
+  * Initial package framework.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500
