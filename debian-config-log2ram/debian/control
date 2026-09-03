@@ -10,6 +10,7 @@ Package: debian-config-log2ram
 Architecture: all
 Depends:
  log2ram (>= 1.7),
+ rsync,
  ${misc:Depends}
 Description: Custom zram configuration for log2ram
  This package configures log2ram to use zstd compression,
