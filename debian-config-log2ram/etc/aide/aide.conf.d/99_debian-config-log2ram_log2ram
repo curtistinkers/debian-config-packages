@@ -27,3 +27,6 @@ VarDirNoLinks = VarDir-n
 # Allow highly permissive hdd.log folder
 =/var/hdd.log/[^/]+$ d VarDirNoLinks
 =/var/hdd.log/.*$ f LogFile
+
+# Allow removal of log files when flushed to disk
+/var/log/.*/.*\.log\.[0-9]+(\.gz)?$ f VarFile+ANF+I+ANR
