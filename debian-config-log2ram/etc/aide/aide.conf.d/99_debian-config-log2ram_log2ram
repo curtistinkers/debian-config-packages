@@ -1,0 +1,28 @@
+#########################
+# --- CUSTOM GROUPS --- #
+#########################
+
+# Define group for regular log files
+LogFile       = L+growing+ANF+I
+
+# Define group for directory that strips out link count
+VarDirNoLinks = VarDir-n
+
+#########################
+# --- LOG2RAM RULES --- #
+#########################
+
+# Systemd rules
+# -------------
+
+# Ignore timer stamp
+=/var/lib/systemd/timers/stamp-log2ram-daily.timer$ f VarTime
+
+# Logging rules
+# -------------
+
+# Match log2ram log file
+=/var/log/log2ram.log$ f LogFile
+
+# Allow highly permissive hdd.log folder
+=/var/hdd.log/[^/]+$ d VarDirNoLinks
