@@ -26,3 +26,4 @@ VarDirNoLinks = VarDir-n
 
 # Allow highly permissive hdd.log folder
 =/var/hdd.log/[^/]+$ d VarDirNoLinks
+=/var/hdd.log/.*$ f LogFile
