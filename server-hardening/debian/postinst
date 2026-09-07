@@ -38,15 +38,38 @@ apply_sysctl_settings() {
     fi
 }
 
-apply_mount_remount() {
-    _target="$1"
-    _options="$2"
-    if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
-        if [ -n "${_options}" ]; then
-            mount -o remount,"${_options}" "${_target}" || true
-        else
-            mount -o remount "${_target}" || true
-        fi
+trigger_systemd_reload() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke daemon-reload || true
+    fi
+}
+
+refresh_mount_unit() {
+    _unit="$1"
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke restart "${_unit}" || true
+    fi
+}
+
+fstab_entry_exists() {
+    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev/shm[[:space:]]' /etc/fstab
+}
+
+add_fstab_entry() {
+    _fstab_line="tmpfs /dev/shm tmpfs defaults,nosuid,nodev,noexec,mode=1777 0 0"
+    if ! fstab_entry_exists; then
+        echo "Adding hardened /dev/shm entry to /etc/fstab..."
+        echo "" >> /etc/fstab
+        echo "# Added by server-hardening package" >> /etc/fstab
+        echo "${_fstab_line}" >> /etc/fstab
+    else
+        echo "/dev/shm entry already exists in /etc/fstab."
+    fi
+}
+
+remount_shm() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke remount /dev/shm || mount -o remount,nosuid,nodev,noexec /dev/shm || true
     fi
 }
 
@@ -57,9 +80,10 @@ case "$1" in
         disable_server_daemons
         set_default_target
 
-        apply_mount_remount "/tmp"
-        apply_mount_remount "/dev/shm"
-        apply_mount_remount "/proc" "hidepid=2"
+        add_fstab_entry
+        trigger_systemd_reload
+        remount_shm
+        refresh_mount_unit "tmp.mount"
         
         apply_sysctl_settings
     ;;

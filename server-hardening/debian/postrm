@@ -12,21 +12,37 @@ reload_sysctl() {
     fi
 }
 
-apply_mount_remount() {
-    _target="$1"
-    if [ -d "${_target}" ]; then
-        mount -o remount "${_target}" || true
+trigger_systemd_reload() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke daemon-reload || true
+    fi
+}
+
+refresh_mount_unit() {
+    _unit="$1"
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke restart "${_unit}" || true
+    fi
+}
+
+remove_fstab_entry() {
+    if [ -f /etc/fstab ]; then
+        sed -i '/# Added by server-hardening package/d' /etc/fstab
+        sed -i '\|^tmpfs /dev/shm tmpfs|d' /etc/fstab
     fi
 }
 
 # --- Main Logic Execution ---
 
 case "$1" in
-    remove|purge)
-        apply_mount_remount "/tmp"
-        apply_mount_remount "/dev/shm"
-        apply_mount_remount "/proc"
+    remove)
+        reload_sysctl
+    ;;
 
+    purge)
+        remove_fstab_entry
+        trigger_systemd_reload
+        refresh_mount_unit "tmp.mount"
         reload_sysctl
     ;;
     
