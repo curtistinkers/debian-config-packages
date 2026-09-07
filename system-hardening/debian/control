@@ -15,7 +15,7 @@ Depends:
   libpam-modules,
   ${misc:Depends}
 Recommends:
-  rng-tools5 | rng-tools-debian
+  rng-tools5 | jitterentropy-rngd
 Description: Generic baseline system hardening for Debian
   Provides universal system security hardening applicable to both server
   and desktop deployments. Configures kernel self-protection parameters,
