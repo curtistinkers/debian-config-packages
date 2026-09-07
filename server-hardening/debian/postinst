@@ -1,0 +1,52 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-server-hardening"
+SCRIPT_NAME="postinst"
+
+# --- Helper Functions ---
+
+disable_server_daemons() {
+    # Disable and stop services via invoke-rc.d and deb-systemd-helper
+    for service in exim4 cups avahi-daemon; do
+        # Mask/disable the systemd unit persistently across reboots
+        if command -v deb-systemd-helper >/dev/null 2>&1; then
+            deb-systemd-helper disable "${service}.service" || true
+        fi
+
+        # Safely stop the service respecting runlevels and policy-rc.d
+        if command -v invoke-rc.d >/dev/null 2>&1; then
+            invoke-rc.d "${service}" stop || true
+        fi
+    done
+}
+
+apply_sysctl_settings() {
+    if command -v sysctl >/dev/null 2>&1; then
+        sysctl --system >/dev/null 2>&1 || true
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    configure)
+        disable_server_daemons
+        apply_sysctl_settings
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        ARG="${1:-none}"
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+        ;;
+
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0

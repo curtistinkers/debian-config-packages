@@ -1,0 +1,9 @@
+debian-config-server-hardening (1.0.0) unstable; urgency=medium
+
+  * Initial release of debian-config-server-hardening package.
+  * Add 60-server-hardening.conf for network stack and execution controls.
+  * Depend on debian-config-system-hardening base package.
+  * Add postinst logic to disable unneeded desktop and mail daemons.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500
