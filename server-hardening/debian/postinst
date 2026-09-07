@@ -25,7 +25,7 @@ set_default_target() {
     # Check if systemd is actively running as PID 1
     if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
         CURRENT_TARGET=$(systemctl get-default 2>/dev/null || true)
-        if [ "$CURRENT_TARGET" != "multi-user.target" ]; then
+        if [ "${CURRENT_TARGET}" != "multi-user.target" ]; then
             systemctl set-default multi-user.target || true
         fi
     fi
