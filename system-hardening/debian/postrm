@@ -43,6 +43,13 @@ revert_file_permissions() {
     remove_statoverride "/etc/ssh/sshd_config"
 }
 
+reload_systemd_daemon() {
+    # Apply changes immediately via systemd unit restart or dynamic remount
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl daemon-reload || true
+    fi
+}
+
 apply_mount_remount() {
     _target="$1"
     if [ -d "${_target}" ]; then
@@ -68,6 +75,7 @@ case "$1" in
         remove_faillock_config
         revert_file_permissions
 
+        reload_systemd_daemon
         apply_mount_remount "/tmp"
         apply_mount_remount "/dev/shm"
 

@@ -1,0 +1,1 @@
+debian-config-system-hardening warning: possibly-insecure-handling-of-tmp-files-in-maintainer-script [postrm:*]
