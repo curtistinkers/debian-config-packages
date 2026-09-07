@@ -1,7 +1,13 @@
 etc/profile.d/* etc/profile.d/
+
 etc/security/limits.d/* etc/security/limits.d/
 etc/security/pwquality.conf.d/* etc/security/pwquality.conf.d/
 
 usr/lib/sysctl.d/* usr/lib/sysctl.d/
+
 usr/lib/systemd/coredump.conf.d/* usr/lib/systemd/coredump.conf.d/
+
+usr/lib/systemd/system/dev-shm.mount.d/* usr/lib/systemd/system/dev-shm.mount.d
+usr/lib/systemd/system/tmp.mount.d/* usr/lib/systemd/system/tmp.mount.d
+
 usr/share/pam-configs/* usr/share/pam-configs/
