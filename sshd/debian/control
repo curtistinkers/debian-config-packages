@@ -1,0 +1,17 @@
+Source: debian-config-sshd
+Section: admin
+Priority: optional
+Maintainer: curtistinkers <curtistinkers@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+
+Package: debian-config-sshd
+Architecture: all
+Depends:
+ openssh-server,
+ fail2ban,
+ ${misc:Depends}
+Description: Hardened SSH daemon configuration based on Lynis audit rules
+ Applies security hardening parameters to OpenSSH via drop-in configuration
+ snippets in /etc/ssh/sshd_config.d/.
