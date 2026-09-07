@@ -25,10 +25,29 @@ refresh_mount_unit() {
     fi
 }
 
-remove_fstab_entry() {
+remove_dev_shm_fstab_entry() {
     if [ -f /etc/fstab ]; then
         sed -i '/# Added by server-hardening package/d' /etc/fstab
         sed -i '\|^tmpfs /dev/shm tmpfs|d' /etc/fstab
+    fi
+}
+
+remount_dev_shm_default() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke remount /dev/shm || mount -o remount remount,defaults,nosuid,nodev,mode=1777 /dev/shm || true
+    fi
+}
+
+remove_proc_fstab_entry() {
+    if [ -f /etc/fstab ]; then
+        sed -i '/# Added by server-hardening package for hidepid/d' /etc/fstab
+        sed -i '\|^proc /proc proc|d' /etc/fstab
+    fi
+}
+
+remount_proc_default() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke remount /proc || mount -o remount,defaults,hidepid=0 /proc || true
     fi
 }
 
@@ -40,9 +59,15 @@ case "$1" in
     ;;
 
     purge)
-        remove_fstab_entry
+        remove_dev_shm_fstab_entry
+        remove_proc_fstab_entry
+
         trigger_systemd_reload
+
         refresh_mount_unit "tmp.mount"
+        remount_dev_shm_default
+        remount_proc_default
+
         reload_sysctl
     ;;
     
