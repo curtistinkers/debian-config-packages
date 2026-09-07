@@ -43,17 +43,35 @@ revert_file_permissions() {
     remove_statoverride "/etc/ssh/sshd_config"
 }
 
-reload_systemd_daemon() {
-    # Apply changes immediately via systemd unit restart or dynamic remount
-    if command -v systemctl >/dev/null 2>&1; then
-        systemctl daemon-reload || true
+trigger_systemd_reload() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke daemon-reload || true
     fi
 }
 
-apply_mount_remount() {
-    _target="$1"
-    if [ -d "${_target}" ]; then
-        mount -o remount "${_target}" || true
+remove_dev_fstab_entry() {
+    if [ -f /etc/fstab ]; then
+        sed -i "/# Added by ${PACKAGE_NAME} for \/dev/d" /etc/fstab
+        sed -i '\|^devtmpfs /dev devtmpfs|d' /etc/fstab
+    fi
+}
+
+remount_dev_default() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,exec /dev || true
+    fi
+}
+
+remove_dev_shm_fstab_entry() {
+    if [ -f /etc/fstab ]; then
+        sed -i "/# Added by ${PACKAGE_NAME} for \/dev\/shm/d" /etc/fstab
+        sed -i '\|^tmpfs /dev/shm tmpfs|d' /etc/fstab
+    fi
+}
+
+remount_dev_shm_default() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,exec /dev/shm || true
     fi
 }
 
@@ -75,9 +93,13 @@ case "$1" in
         remove_faillock_config
         revert_file_permissions
 
-        reload_systemd_daemon
-        apply_mount_remount "/tmp"
-        apply_mount_remount "/dev/shm"
+        remove_dev_fstab_entry
+        remove_dev_shm_fstab_entry
+
+        trigger_systemd_reload
+
+        remount_dev_default
+        remount_dev_shm_default
 
         reload_sysctl
     ;;

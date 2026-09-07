@@ -14,9 +14,8 @@ disable_server_daemons() {
             deb-systemd-helper disable "${service}.service" || true
         fi
 
-        # Safely stop the service respecting runlevels and policy-rc.d
-        if command -v invoke-rc.d >/dev/null 2>&1; then
-            invoke-rc.d "${service}" stop || true
+        if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+            deb-systemd-invoke stop "${service}" || true
         fi
     done
 }
@@ -51,42 +50,6 @@ restart_mount_unit() {
     fi
 }
 
-fstab_dev_entry_exists() {
-    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev[[:space:]]' /etc/fstab
-}
-
-add_dev_fstab_entry() {
-    _dev_fstab_line="devtmpfs /dev devtmpfs defaults,noexec 0 0"
-    if ! fstab_dev_entry_exists; then
-        echo "Adding hardened /dev entry to /etc/fstab..."
-        {
-            echo ""
-            echo "# Added by server-hardening package for /dev"
-            echo "${_dev_fstab_line}"
-        } >> /etc/fstab
-    else
-        echo "/dev entry already exists in /etc/fstab."
-    fi
-}
-
-fstab_dev_shm_entry_exists() {
-    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev/shm[[:space:]]' /etc/fstab
-}
-
-add_dev_shm_fstab_entry() {
-    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,noexec 0 0"
-    if ! fstab_dev_shm_entry_exists; then
-        echo "Adding hardened /dev/shm entry to /etc/fstab..."
-        {
-            echo ""
-            echo "# Added by server-hardening package"
-            echo "${_dev_shm_fstab_line}"
-        } >> /etc/fstab
-    else
-        echo "/dev/shm entry already exists in /etc/fstab."
-    fi
-}
-
 fstab_proc_entry_exists() {
     grep -qE '^[[:space:]]*[^#].*[[:space:]]+/proc[[:space:]]' /etc/fstab
 }
@@ -97,23 +60,11 @@ add_proc_fstab_entry() {
         echo "Adding hardened /proc entry to /etc/fstab..."
         {
             echo ""
-            echo "# Added by server-hardening package for hidepid"
+            echo "# Added by ${PACKAGE_NAME} for hidepid"
             echo "${_proc_fstab_line}"
         } >> /etc/fstab
     else
         echo "/proc entry already exists in /etc/fstab."
-    fi
-}
-
-remount_dev() {
-    if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,noexec /dev || true
-    fi
-}
-
-remount_dev_shm() {
-    if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,noexec /dev/shm || true
     fi
 }
 
@@ -130,15 +81,12 @@ case "$1" in
         disable_server_daemons
         set_default_target
 
-        add_dev_fstab_entry
-        add_dev_shm_fstab_entry
         add_proc_fstab_entry
 
         trigger_systemd_reload
         
         restart_mount_unit "tmp.mount"
-        remount_dev
-        remount_dev_shm
+
         remount_proc
         
         apply_sysctl_settings

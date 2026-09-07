@@ -79,6 +79,60 @@ apply_file_hardening_permissions() {
     enforce_statoverride "/etc/ssh/sshd_config" "0600" "root" "root"
 }
 
+trigger_systemd_reload() {
+    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
+        deb-systemd-invoke daemon-reload || true
+    fi
+}
+
+fstab_dev_entry_exists() {
+    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev[[:space:]]' /etc/fstab
+}
+
+add_dev_fstab_entry() {
+    _dev_fstab_line="devtmpfs /dev devtmpfs defaults,noexec 0 0"
+    if ! fstab_dev_entry_exists; then
+        echo "Adding hardened /dev entry to /etc/fstab..."
+        {
+            echo ""
+            echo "# Added by ${PACKAGE_NAME} for /dev"
+            echo "${_dev_fstab_line}"
+        } >> /etc/fstab
+    else
+        echo "/dev entry already exists in /etc/fstab."
+    fi
+}
+
+remount_dev() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,noexec /dev || true
+    fi
+}
+
+fstab_dev_shm_entry_exists() {
+    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev/shm[[:space:]]' /etc/fstab
+}
+
+add_dev_shm_fstab_entry() {
+    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,noexec 0 0"
+    if ! fstab_dev_shm_entry_exists; then
+        echo "Adding hardened /dev/shm entry to /etc/fstab..."
+        {
+            echo ""
+            echo "# Added by ${PACKAGE_NAME} for /dev/shm"
+            echo "${_dev_shm_fstab_line}"
+        } >> /etc/fstab
+    else
+        echo "/dev/shm entry already exists in /etc/fstab."
+    fi
+}
+
+remount_dev_shm() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,noexec /dev/shm || true
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
@@ -88,6 +142,14 @@ case "$1" in
         apply_faillock_config
 
         apply_file_hardening_permissions
+
+        add_dev_fstab_entry
+        add_dev_shm_fstab_entry
+
+        trigger_systemd_reload
+
+        remount_dev
+        remount_dev_shm
 
         apply_sysctl_settings
     ;;
