@@ -1,0 +1,6 @@
+Name: Hardened Password Quality Checking
+Default: yes
+Priority: 1024
+Auth-Type: Primary
+Auth:
+	optional			pam_pwquality.so retry=3

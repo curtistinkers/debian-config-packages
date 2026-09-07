@@ -12,18 +12,24 @@ apply_sysctl_settings() {
     fi
 }
 
+apply_pwquality_config() {
+    if command -v pam-auth-update >/dev/null 2>&1; then
+        pam-auth-update --package --enable system-hardening-pwquality || true
+    fi
+}
+
 set_config_key() {
     KEY="$1"
     VALUE="$2"
     FILE="$3"
 
-    # Check if the key exists (commented or uncommented)
-    if grep -qE "^#? *${KEY}" "$FILE"; then
-        # Update the existing entry
-        sed -i "s/^#* *${KEY}.*/${KEY} ${VALUE}/" "$FILE"
+    # Match key even if commented out or at end of line
+    if grep -qE "^[[:space:]]*#?[[:space:]]*${KEY}([[:space:]]+|$)" "${FILE}"; then
+        # Update existing line (handles trailing whitespace or direct end-of-line)
+        sed -i -E "s@^[[:space:]]*#?[[:space:]]*${KEY}([[:space:]].*)?\$@${KEY}\t${VALUE}@" "${FILE}"
     else
-        # Append the key if missing entirely
-        echo "${KEY} ${VALUE}" >> "$FILE"
+        # Append missing key
+        printf "%s\t%s\n" "${KEY}" "${VALUE}" >> "${FILE}"
     fi
 }
 
@@ -31,11 +37,9 @@ apply_login_defs_hardening() {
     LOGIN_DEFS="/etc/login.defs"
     if [ -f "${LOGIN_DEFS}" ]; then
         # Check and set/append each key safely
-        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "$LOGIN_DEFS"
-        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "$LOGIN_DEFS"
-        set_config_key "UMASK"                "027"   "$LOGIN_DEFS"
-        set_config_key "PASS_MAX_DAYS"        "90"    "$LOGIN_DEFS"
-        set_config_key "PASS_MIN_DAYS"        "7"     "$LOGIN_DEFS"
+        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "${LOGIN_DEFS}"
+        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "${LOGIN_DEFS}"
+        set_config_key "UMASK"                "027"   "${LOGIN_DEFS}"
     fi
 }
 
@@ -44,6 +48,7 @@ apply_login_defs_hardening() {
 case "$1" in
     configure)
         apply_login_defs_hardening
+        apply_pwquality_config
         apply_sysctl_settings
     ;;
 

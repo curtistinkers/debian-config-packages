@@ -4,6 +4,15 @@ debian-config-system-hardening (1.0.0) unstable; urgency=medium
   * Add 50-system-hardening.conf for kernel self-protection parameters.
   * Add 50-disable-coredump.conf to prevent core dump memory leaks.
   * Enforce AppArmor dependency.
+  * Integrate libpam-pwquality dependency for password complexity enforcement.
+  * Add 50-system-hardening.conf pwquality configuration drop-in under
+    /etc/security/pwquality.conf.d/.
+  * Add system-hardening-pwquality PAM profile under /usr/share/pam-configs/
+    for declarative pam-auth-update execution.
+  * Update postinst script with POSIX set_config_key helper function to
+    enforce password aging, UMASK 027, and hashing rounds in /etc/login.defs.
+  * Expand sysctl baseline with dev.tty.ldisc_autoload, kernel.yama.ptrace_scope,
+    kernel.unprivileged_bpf_disabled, and net.core.bpf_jit_harden.
     (Closes: #100000)
 
- -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 07 Aug 2026 12:32:00 -0500

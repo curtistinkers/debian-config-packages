@@ -12,10 +12,17 @@ reload_sysctl() {
     fi
 }
 
+remove_pwquality_config() {
+    if command -v pam-auth-update >/dev/null 2>&1; then
+        pam-auth-update --package --remove system-hardening-pwquality || true
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     remove|purge)
+        remove_pwquality_config
         reload_sysctl
     ;;
     
@@ -27,7 +34,7 @@ case "$1" in
         echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
         exit 1
     ;;
-		
+
 esac
 
 # Automatically injects standard debhelper maintenance routines
