@@ -18,10 +18,17 @@ trigger_systemd_reload() {
     fi
 }
 
-refresh_mount_unit() {
+restart_mount_unit() {
     _unit="$1"
     if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
         deb-systemd-invoke restart "${_unit}" || true
+    fi
+}
+
+remove_dev_fstab_entry() {
+    if [ -f /etc/fstab ]; then
+        sed -i '/# Added by server-hardening package for \/dev/d' /etc/fstab
+        sed -i '\|^devtmpfs /dev devtmpfs|d' /etc/fstab
     fi
 }
 
@@ -32,12 +39,6 @@ remove_dev_shm_fstab_entry() {
     fi
 }
 
-remount_dev_shm_default() {
-    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-        deb-systemd-invoke remount /dev/shm || mount -o remount remount,defaults,nosuid,nodev,mode=1777 /dev/shm || true
-    fi
-}
-
 remove_proc_fstab_entry() {
     if [ -f /etc/fstab ]; then
         sed -i '/# Added by server-hardening package for hidepid/d' /etc/fstab
@@ -45,9 +46,21 @@ remove_proc_fstab_entry() {
     fi
 }
 
+remount_dev_default() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,exec /dev || true
+    fi
+}
+
+remount_dev_shm_default() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,exec /dev/shm || true
+    fi
+}
+
 remount_proc_default() {
-    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-        deb-systemd-invoke remount /proc || mount -o remount,defaults,hidepid=0 /proc || true
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,hidepid=0 /proc || true
     fi
 }
 
@@ -59,12 +72,14 @@ case "$1" in
     ;;
 
     purge)
+        remove_dev_fstab_entry
         remove_dev_shm_fstab_entry
         remove_proc_fstab_entry
 
         trigger_systemd_reload
 
-        refresh_mount_unit "tmp.mount"
+        restart_mount_unit "tmp.mount"
+        remount_dev_default
         remount_dev_shm_default
         remount_proc_default
 

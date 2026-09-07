@@ -44,10 +44,28 @@ trigger_systemd_reload() {
     fi
 }
 
-refresh_mount_unit() {
+restart_mount_unit() {
     _unit="$1"
     if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
         deb-systemd-invoke restart "${_unit}" || true
+    fi
+}
+
+fstab_dev_entry_exists() {
+    grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev[[:space:]]' /etc/fstab
+}
+
+add_dev_fstab_entry() {
+    _dev_fstab_line="devtmpfs /dev devtmpfs defaults,noexec 0 0"
+    if ! fstab_dev_entry_exists; then
+        echo "Adding hardened /dev entry to /etc/fstab..."
+        {
+            echo ""
+            echo "# Added by server-hardening package for /dev"
+            echo "${_dev_fstab_line}"
+        } >> /etc/fstab
+    else
+        echo "/dev entry already exists in /etc/fstab."
     fi
 }
 
@@ -56,7 +74,7 @@ fstab_dev_shm_entry_exists() {
 }
 
 add_dev_shm_fstab_entry() {
-    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,nosuid,nodev,noexec,mode=1777 0 0"
+    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,noexec 0 0"
     if ! fstab_dev_shm_entry_exists; then
         echo "Adding hardened /dev/shm entry to /etc/fstab..."
         {
@@ -66,12 +84,6 @@ add_dev_shm_fstab_entry() {
         } >> /etc/fstab
     else
         echo "/dev/shm entry already exists in /etc/fstab."
-    fi
-}
-
-remount_dev_shm() {
-    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-        deb-systemd-invoke remount /dev/shm || mount -o remount remount,defaults,nosuid,nodev,noexec,mode=1777 /dev/shm || true
     fi
 }
 
@@ -93,9 +105,21 @@ add_proc_fstab_entry() {
     fi
 }
 
+remount_dev() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,noexec /dev || true
+    fi
+}
+
+remount_dev_shm() {
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,noexec /dev/shm || true
+    fi
+}
+
 remount_proc() {
-    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-        deb-systemd-invoke remount /proc || mount -o remount,defaults,hidepid=2 /proc || true
+    if [ -d /run/systemd/system ]; then
+        mount -o remount,defaults,hidepid=2 /proc || true
     fi
 }
 
@@ -106,10 +130,14 @@ case "$1" in
         disable_server_daemons
         set_default_target
 
+        add_dev_fstab_entry
         add_dev_shm_fstab_entry
         add_proc_fstab_entry
+
         trigger_systemd_reload
-        refresh_mount_unit "tmp.mount"
+        
+        restart_mount_unit "tmp.mount"
+        remount_dev
         remount_dev_shm
         remount_proc
         
