@@ -23,19 +23,23 @@ model.
 
 <!-- markdownlint-disable line-length -->
 ```text
-debian-config-system-hardening/
+debian-config-server-hardening/
+├── README.md
+├── LICENSE.md
 ├── debian/
-│   ├── changelog                            # Changelog
-│   ├── control                              # Package metadata and dependencies
-│   ├── install                              # Installs drop-in configs
-│   ├── postinst                             # Post-installation hooks
-│   ├── postrm                               # Post-removal hooks
-│   └── rules                                # Debhelper build targets
+│   ├── changelog
+│   ├── control
+│   ├── debian-config-server-hardening.install
+│   ├── postinst
+│   ├── postrm
+│   └── rules
 └── usr/
     └── lib/
-        └── sysctl.d/
-            └── 60-server-hardening.conf     # Kernel runtime protection options
-
+        ├── sysctl.d/
+        │   └── 60-server-hardening.conf
+        └── systemd/
+            └── system-preset/
+                └── 50-debian-config-server-hardening.preset
 ```
 <!-- markdownlint-enable -->
 

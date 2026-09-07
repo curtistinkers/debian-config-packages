@@ -21,6 +21,13 @@ disable_server_daemons() {
     done
 }
 
+apply_presets() {
+    # Apply unit presets if systemd is running as PID 1
+    if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+        systemctl preset default.target || true
+    fi
+}
+
 apply_sysctl_settings() {
     if command -v sysctl >/dev/null 2>&1; then
         sysctl --system >/dev/null 2>&1 || true
@@ -32,6 +39,7 @@ apply_sysctl_settings() {
 case "$1" in
     configure)
         disable_server_daemons
+        apply_presets
         apply_sysctl_settings
     ;;
 
