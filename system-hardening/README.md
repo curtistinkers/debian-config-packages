@@ -25,8 +25,10 @@ breaking core functionality.
     `libpam-pwquality` and declarative `pam-auth-update` profiles. Safe POSIX
     maintainer hooks enforce `login.defs` baselines (`UMASK 027`, SHA-512
     rounds, and password aging).
-* **Core Dump Suppression:** Configures `systemd-coredump` to drop process core
-    dumps to protect sensitive memory states from hitting disk.
+* **Core Dump Suppression:** Restricts process core dumps across all execution layers:
+  * `systemd-coredump` drop-in configuration (`/usr/lib/systemd/coredump.conf.d/`).
+  * Interactive/login shell initialization (`/etc/profile.d/50-disable-coredump.sh`).
+  * PAM security limits (`/etc/security/limits.d/50-disable-coredump.conf`).
 * **Mandatory Access Control:** Declares a package dependency on `apparmor`.
 
 ## Directory Structure
@@ -44,9 +46,13 @@ debian-config-system-hardening/
 │   ├── postrm                                   # Post-removal hooks (PAM cleanup, sysctl reload)
 │   └── rules                                    # Debhelper build targets
 ├── etc/
-│   └── security/
-│       └── pwquality.conf.d/
-│           └── 50-system-hardening.conf         # Password complexity rules
+│   ├── profile.d/
+│   │   └── 50-disable-coredump.sh              # Restricts core dumps at shell init
+│   ├── security/
+│   │   ├── limits.d/
+│   │   │   └── 50-disable-coredump.conf        # Restricts core dumps via PAM
+│   │   └── pwquality.conf.d/
+│   │       └── 50-system-hardening.conf        # Password complexity rules
 └── usr/
     ├── lib/
     │   ├── sysctl.d/
@@ -56,7 +62,7 @@ debian-config-system-hardening/
     │           └── 50-disable-coredump.conf    # Core dump suppression rules
     └── share/
         └── pam-configs/
-            └── system-hardening-pwquality       # Declarative pam-auth-update profile
+            └── system-hardening-pwquality      # Declarative pam-auth-update profile
 ```
 <!-- markdownlint-enable -->
 
@@ -70,6 +76,9 @@ sysctl fs.protected_symlinks kernel.kptr_restrict kernel.dmesg_restrict dev.tty.
 
 # Inspect active systemd coredump configuration
 systemd-analyze cat-config systemd/coredump.conf
+
+# Check shell core limit
+ulimit -c
 
 # Verify login.defs modifications
 grep -E "(SHA_CRYPT|UMASK)" /etc/login.defs
@@ -87,5 +96,9 @@ echo "weakpass" | pwscore
 Build the package using debuild:
 
 ```bash
+# Using debuild directly inside the package folder:
 debuild -us -uc -b
+
+# Or using the build script from repository root:
+./build.sh system-hardening
 ```

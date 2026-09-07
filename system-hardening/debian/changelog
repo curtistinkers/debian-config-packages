@@ -13,6 +13,8 @@ debian-config-system-hardening (1.0.0) unstable; urgency=medium
     enforce password aging, UMASK 027, and hashing rounds in /etc/login.defs.
   * Expand sysctl baseline with dev.tty.ldisc_autoload, kernel.yama.ptrace_scope,
     kernel.unprivileged_bpf_disabled, and net.core.bpf_jit_harden.
+  * Add 50-disable-coredump.sh profile drop-in under /etc/profile.d/ and
+    50-disable-coredump.conf limits drop-in under /etc/security/limits.d/.
     (Closes: #100000)
 
- -- curtistinkers <curtistinkers@gmail.com>  Mon, 07 Aug 2026 12:32:00 -0500
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 07 Sep 2026 12:58:00 -0500
