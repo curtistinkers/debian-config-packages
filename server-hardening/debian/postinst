@@ -37,12 +37,52 @@ apply_sysctl_settings() {
     fi
 }
 
+configure_fstab_mount() {
+    _target="$1"
+    _fstype="$2"
+    _options="$3"
+    _file="/etc/fstab"
+
+    if grep -qE "^[[:space:]]*[^#].*[[:space:]]${_target}[[:space:]]" "${_file}"; then
+        sed -i "s@^[[:space:]]*\([^#][^[:space:]]*[[:space:]]\+${_target}[[:space:]]\+[^[:space:]]*[[:space:]]\+\)[^[:space:]]*@\1${_options}@" "${_file}"
+    else
+        printf "%s\t%s\t%s\t%s\t0\t0\n" "${_fstype}" "${_target}" "${_fstype}" "${_options}" >> "${_file}"
+    fi
+}
+
+configure_proc_entry() {
+    _file="/etc/fstab"
+    if ! grep -qE "^[[:space:]]*[^#].*[[:space:]]/proc[[:space:]]" "${_file}"; then
+        printf "proc\t/proc\tproc\tdefaults,hidepid=2\t0\t0\n" >> "${_file}"
+    fi
+}
+
+apply_mount_remount() {
+    _target="$1"
+    _options="$2"
+    if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
+        if [ -n "${_options}" ]; then
+            mount -o remount,${_options} "${_target}" || true
+        else
+            mount -o remount "${_target}" || true
+        fi
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     configure)
         disable_server_daemons
         set_default_target
+
+        configure_fstab_mount "/tmp" "tmpfs" "defaults,noexec,nosuid,nodev"
+        configure_fstab_mount "/dev/shm" "tmpfs" "defaults,noexec,nosuid,nodev"
+        configure_proc_entry
+        apply_mount_remount "/tmp"
+        apply_mount_remount "/dev/shm"
+        apply_mount_remount "/proc" "hidepid=2"
+        
         apply_sysctl_settings
     ;;
 

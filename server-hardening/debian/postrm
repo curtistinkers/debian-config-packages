@@ -12,10 +12,40 @@ reload_sysctl() {
     fi
 }
 
+cleanup_fstab_mount() {
+    _target="$1"
+    _file="/etc/fstab"
+    
+    # If the entry was added by us (contains our strict options), remove the line entirely 
+    # or revert it. For cloud environments where it didn't exist, deleting the injected line is cleanest.
+    if grep -qE "^[[:space:]]*[^#].*[[:space:]]${_target}[[:space:]].*noexec,nosuid,nodev" "${_file}"; then
+        sed -i "s@^[[:space:]]*[^#].*[[:space:]]${_target}[[:space:]].*@# & (removed by ${PACKAGE_NAME} purge)@g" "${_file}" || true
+    fi
+}
+
+remove_proc_entry() {
+    _file="/etc/fstab"
+    sed -i '/^[[:space:]]*[^#].*[[:space:]]\/proc[[:space:]]/d' "${_file}" || true
+}
+
+apply_mount_remount() {
+    _target="$1"
+    if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
+        mount -o remount "${_target}" || true
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     remove|purge)
+        cleanup_fstab_mount "/tmp"
+        cleanup_fstab_mount "/dev/shm"
+        remove_proc_entry
+        apply_mount_remount "/tmp"
+        apply_mount_remount "/dev/shm"
+        apply_mount_remount "/proc"
+
         reload_sysctl
     ;;
     
