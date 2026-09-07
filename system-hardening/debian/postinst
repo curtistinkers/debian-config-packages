@@ -12,10 +12,38 @@ apply_sysctl_settings() {
     fi
 }
 
+set_config_key() {
+    KEY="$1"
+    VALUE="$2"
+    FILE="$3"
+
+    # Check if the key exists (commented or uncommented)
+    if grep -qE "^#? *${KEY}" "$FILE"; then
+        # Update the existing entry
+        sed -i "s/^#* *${KEY}.*/${KEY} ${VALUE}/" "$FILE"
+    else
+        # Append the key if missing entirely
+        echo "${KEY} ${VALUE}" >> "$FILE"
+    fi
+}
+
+apply_login_defs_hardening() {
+    LOGIN_DEFS="/etc/login.defs"
+    if [ -f "${LOGIN_DEFS}" ]; then
+        # Check and set/append each key safely
+        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "$LOGIN_DEFS"
+        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "$LOGIN_DEFS"
+        set_config_key "UMASK"                "027"   "$LOGIN_DEFS"
+        set_config_key "PASS_MAX_DAYS"        "90"    "$LOGIN_DEFS"
+        set_config_key "PASS_MIN_DAYS"        "7"     "$LOGIN_DEFS"
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     configure)
+        apply_login_defs_hardening
         apply_sysctl_settings
     ;;
 
