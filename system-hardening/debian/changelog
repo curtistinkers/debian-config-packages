@@ -1,0 +1,9 @@
+debian-config-system-hardening (1.0.0) unstable; urgency=medium
+
+  * Initial release of debian-config-system-hardening package.
+  * Add 50-system-hardening.conf for kernel self-protection parameters.
+  * Add 50-disable-coredump.conf to prevent core dump memory leaks.
+  * Enforce AppArmor dependency.
+    (Closes: #100000)
+
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500

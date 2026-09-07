@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+PACKAGE_NAME="debian-config-system-hardening"
+SCRIPT_NAME="postrm"
+
+# --- Helper Functions ---
+
+reload_sysctl() {
+    if command -v sysctl >/dev/null 2>&1; then
+        sysctl --system >/dev/null 2>&1 || true
+    fi
+}
+
+# --- Main Logic Execution ---
+
+case "$1" in
+    remove|purge)
+        reload_sysctl
+    ;;
+    
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+	;;
+
+    *)
+        ARG="${1:-none}"
+        echo "${PACKAGE_NAME}: ${SCRIPT_NAME} called with unknown argument \`${ARG}\`" >&2
+        exit 1
+    ;;
+		
+esac
+
+# Automatically injects standard debhelper maintenance routines
+#DEBHELPER#
+
+exit 0
