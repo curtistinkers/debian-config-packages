@@ -24,10 +24,11 @@ and relies on standard Debian package hooks for setup and maintenance.
 ```text
 debian-config-sshd/
 ├── debian/
-│   ├── control                      # Package metadata and dependencies (openssh-server, fail2ban)
-│   ├── debian-config-sshd.install   # Installs sshd and fail2ban drop-in configs
-│   ├── postinst                     # Group creation, syntax check, and service reloads
-│   ├── postrm                       # Cleanup and admin notifications on purge
+|   ├── changelog                    # Changelog
+│   ├── control                      # Package metadata and dependencies
+│   ├── install                      # Installs drop-in configs
+│   ├── postinst                     # Post-installation hooks
+│   ├── postrm                       # Post-removal hooks
 │   └── rules                        # Debhelper build targets
 └── etc/
     ├── fail2ban/
