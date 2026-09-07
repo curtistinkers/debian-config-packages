@@ -1,0 +1,12 @@
+Name: System Hardening Account Lockout (faillock)
+Default: yes
+Priority: 1024
+Auth-Type: Primary
+Auth:
+	required	pam_faillock.so preauth silent audit deny=5 unlock_time=900
+Auth-Initial:
+	required	pam_faillock.so preauth silent audit deny=5 unlock_time=900
+Auth-Failure:
+	required	pam_faillock.so authfail audit
+Account:
+	required	pam_faillock.so

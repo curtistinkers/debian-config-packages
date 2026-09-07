@@ -18,6 +18,12 @@ apply_pwquality_config() {
     fi
 }
 
+apply_faillock_config() {
+    if command -v pam-auth-update >/dev/null 2>&1; then
+        pam-auth-update --package --enable system-hardening-faillock || true
+    fi
+}
+
 set_config_key() {
     KEY="$1"
     VALUE="$2"
@@ -49,6 +55,7 @@ case "$1" in
     configure)
         apply_login_defs_hardening
         apply_pwquality_config
+        apply_faillock_config
         apply_sysctl_settings
     ;;
 

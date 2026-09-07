@@ -12,19 +12,22 @@ breaking core functionality.
 ## Hardening Applied
 
 * **Kernel Self-Protection:** Restricts symlink/hardlink exploitation, blocks
-    regular/FIFO writes in sticky directories (`/tmp`), and restricts TTY line
-    discipline auto-loading (`dev.tty.ldisc_autoload`).
+  regular/FIFO writes in sticky directories (`/tmp`), and restricts TTY line
+  discipline auto-loading (`dev.tty.ldisc_autoload`).
 * **Information Leak & Process Protection:** Hides kernel pointers
-    (`kptr_restrict`), restricts `dmesg` buffer access, and limits process
-    tracing via `ptrace_scope`.
+  (`kptr_restrict`), restricts `dmesg` buffer access, and limits processtracing
+  via `ptrace_scope`.
 * **eBPF Hardening:** Restricts unprivileged eBPF execution
-    (`kernel.unprivileged_bpf_disabled`) and enables JIT compiler constant blinding
-    (`net.core.bpf_jit_harden`).
+  (`kernel.unprivileged_bpf_disabled`) and enables JIT compiler constant blinding
+  (`net.core.bpf_jit_harden`).
 * **Password Policy & Authentication:** Enforces password complexity
-    requirements (minimum length 12, character diversity, dictionary checks) via
-    `libpam-pwquality` and declarative `pam-auth-update` profiles. Safe POSIX
-    maintainer hooks enforce `login.defs` baselines (`UMASK 027`, SHA-512
-    rounds, and password aging).
+  requirements (minimum length 12, character diversity, dictionary checks) via
+  `libpam-pwquality` and declarative `pam-auth-update` profiles. Configures
+  account lockout (`pam_faillock`) after consecutive failed attempts. Safe POSIX
+  maintainer hooks enforce `login.defs` baselines (`UMASK 027`, SHA-512 rounds).
+* **Environment Default Umask:** Enforces system-wide baseline `umask 027`
+  across interactive/login shell sessions (`/etc/profile.d/50-default-umask.sh`)
+  and daemon initializations (`/etc/login.defs`).
 * **Core Dump Suppression:** Restricts process core dumps across all execution layers:
   * `systemd-coredump` drop-in configuration (`/usr/lib/systemd/coredump.conf.d/`).
   * Interactive/login shell initialization (`/etc/profile.d/50-disable-coredump.sh`).
@@ -47,12 +50,13 @@ debian-config-system-hardening/
 │   └── rules                                    # Debhelper build targets
 ├── etc/
 │   ├── profile.d/
-│   │   └── 50-disable-coredump.sh              # Restricts core dumps at shell init
-│   ├── security/
-│   │   ├── limits.d/
-│   │   │   └── 50-disable-coredump.conf        # Restricts core dumps via PAM
-│   │   └── pwquality.conf.d/
-│   │       └── 50-system-hardening.conf        # Password complexity rules
+│   │   ├── 50-default-umask.sh                  # Global shell umask 027 enforcement
+│   │   └── 50-disable-coredump.sh               # Restricts core dumps at shell init
+│   └── security/
+│       ├── limits.d/
+│       │   └── 50-disable-coredump.conf         # Restricts core dumps via PAM
+│       └── pwquality.conf.d/
+│           └── 50-system-hardening.conf         # Password complexity rules
 └── usr/
     ├── lib/
     │   ├── sysctl.d/
@@ -62,7 +66,8 @@ debian-config-system-hardening/
     │           └── 50-disable-coredump.conf    # Core dump suppression rules
     └── share/
         └── pam-configs/
-            └── system-hardening-pwquality      # Declarative pam-auth-update profile
+            ├── system-hardening-faillock        # Account lockout PAM profile
+            └── system-hardening-pwquality       # Declarative pam-auth-update profile
 ```
 <!-- markdownlint-enable -->
 
@@ -77,14 +82,15 @@ sysctl fs.protected_symlinks kernel.kptr_restrict kernel.dmesg_restrict dev.tty.
 # Inspect active systemd coredump configuration
 systemd-analyze cat-config systemd/coredump.conf
 
-# Check shell core limit
+# Check active umask and core limits
+umask
 ulimit -c
 
 # Verify login.defs modifications
 grep -E "(SHA_CRYPT|UMASK)" /etc/login.defs
 
-# Verify the PAM stack includes pwquality
-grep pwquality /etc/pam.d/common-password
+# Verify the PAM stack includes pwquality and faillock
+grep -E "(pwquality|faillock)" /etc/pam.d/common-auth /etc/pam.d/common-password
 
 # Test password policy parsing with pwscore
 echo "weakpass" | pwscore

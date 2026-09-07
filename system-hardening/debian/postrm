@@ -18,11 +18,18 @@ remove_pwquality_config() {
     fi
 }
 
+remove_faillock_config() {
+    if command -v pam-auth-update >/dev/null 2>&1; then
+        pam-auth-update --package --remove system-hardening-faillock || true
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     remove|purge)
         remove_pwquality_config
+        remove_faillock_config
         reload_sysctl
     ;;
     
