@@ -5,14 +5,18 @@ Maintainer: curtistinkers <curtistinkers@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 Vcs-Git: https://github.com/curtistinkers/debian-config-packages.git
+Vcs-Browser: https://github.com/curtistinkers/debian-config-packages
 
 Package: debian-config-system-hardening
 Architecture: all
 Depends:
- apparmor,
- libpam-pwquality,
- ${misc:Depends}
+  apparmor,
+  libpam-pwquality,
+  libpam-modules,
+  ${misc:Depends}
+Recommends:
+  rng-tools5 | rng-tools-debian
 Description: Generic baseline system hardening for Debian
- Provides universal system security hardening applicable to both server
- and desktop deployments. Configures kernel self-protection parameters,
- disables core dumps, system restrictions, and password complexity.
+  Provides universal system security hardening applicable to both server
+  and desktop deployments. Configures kernel self-protection parameters,
+  disables core dumps, system restrictions, and password complexity.
