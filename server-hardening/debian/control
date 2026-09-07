@@ -10,5 +10,6 @@ Package: debian-config-server-hardening
 Architecture: all
 Depends: debian-config-system-hardening, ${misc:Depends}
 Description: Server-tier system hardening for Debian
- Provides network stack security and daemon management for headless server environments.
- Depends on debian-config-system-hardening for base OS kernel and coredump protections.
+ Provides network stack security and daemon management for headless server
+ environments. Depends on debian-config-system-hardening for base OS kernel and
+ coredump protections.
