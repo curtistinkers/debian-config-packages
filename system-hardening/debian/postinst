@@ -63,7 +63,7 @@ enforce_statoverride() {
     fi
 }
 
-apply_file_permissions() {
+apply_file_hardening_permissions() {
     # GRUB configuration
     enforce_statoverride "/boot/grub/grub.cfg" "0600" "root" "root"
 
@@ -79,6 +79,26 @@ apply_file_permissions() {
     enforce_statoverride "/etc/ssh/sshd_config" "0600" "root" "root"
 }
 
+configure_fstab_mount() {
+    _target="$1"
+    _fstype="$2"
+    _options="$3"
+    _file="/etc/fstab"
+
+    if grep -qE "^[[:space:]]*[^#].*[[:space:]]${_target}[[:space:]]" "${_file}"; then
+        sed -i "s@^[[:space:]]*\([^#][^[:space:]]*[[:space:]]\+${_target}[[:space:]]\+[^[:space:]]*[[:space:]]\+\)[^[:space:]]*@\1${_options}@" "${_file}"
+    else
+        printf "%s\t%s\t%s\t%s\t0\t0\n" "${_fstype}" "${_target}" "${_fstype}" "${_options}" >> "${_file}"
+    fi
+}
+
+apply_mount_remount() {
+    _target="$1"
+    if [ -d "${_target}" ]; then
+        mount -o remount "${_target}" || true
+    fi
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
@@ -86,7 +106,14 @@ case "$1" in
         apply_login_defs_hardening
         apply_pwquality_config
         apply_faillock_config
-        apply_file_permissions
+
+        apply_file_hardening_permissions
+
+        configure_fstab_mount "/tmp" "tmpfs" "defaults,nosuid,nodev"
+        configure_fstab_mount "/dev/shm" "tmpfs" "defaults,nosuid,nodev"
+        apply_mount_remount "/tmp"
+        apply_mount_remount "/dev/shm"
+
         apply_sysctl_settings
     ;;
 
