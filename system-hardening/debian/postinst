@@ -79,25 +79,6 @@ apply_file_hardening_permissions() {
     enforce_statoverride "/etc/ssh/sshd_config" "0600" "root" "root"
 }
 
-reload_systemd_daemon() {
-    # Apply changes immediately via systemd unit restart or dynamic remount
-    if command -v systemctl >/dev/null 2>&1; then
-        systemctl daemon-reload || true
-    fi
-}
-
-apply_mount_remount() {
-    _target="$1"
-    _options="$2"
-    if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
-        if [ -n "${_options}" ]; then
-            mount -o remount,"${_options}" "${_target}" || true
-        else
-            mount -o remount "${_target}" || true
-        fi
-    fi
-}
-
 # --- Main Logic Execution ---
 
 case "$1" in
@@ -107,10 +88,6 @@ case "$1" in
         apply_faillock_config
 
         apply_file_hardening_permissions
-
-        reload_systemd_daemon
-        apply_mount_remount "/tmp"
-        apply_mount_remount "/dev/shm"
 
         apply_sysctl_settings
     ;;
