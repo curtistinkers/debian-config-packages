@@ -1,9 +1,10 @@
 debian-config-server-hardening (1.0.0) unstable; urgency=medium
 
-  * Initial release of debian-config-server-hardening package.
-  * Add 60-server-hardening.conf for network stack and execution controls.
+  * Initial development release of debian-config-server-hardening package.
+  * Add 60-server-hardening.conf for strict sysctl network stack and execution controls.
   * Depend on debian-config-system-hardening base package.
-  * Add postinst logic to disable unneeded desktop and mail daemons.
+  * Add postinst logic to enforce multi-user target and safely disable unneeded server daemons (exim4, cups, avahi-daemon).
+  * Implement robust fstab hardening for temporary storage (noexec, nosuid, nodev) and /proc (hidepid=2) with clean remove/purge lifecycle separation.
     (Closes: #100000)
 
- -- curtistinkers <curtistinkers@gmail.com>  Mon, 24 Aug 2026 13:28:00 -0500
+ -- curtistinkers <curtistinkers@gmail.com>  Mon, 07 Sep 2026 13:28:00 -0500
