@@ -1,5 +1,3 @@
 usr/lib/sysctl.d/* usr/lib/sysctl.d/
 
-usr/lib/systemd/system/dev-shm.mount usr/lib/systemd/system
-usr/lib/systemd/system/proc.mount.d/* usr/lib/systemd/system/proc.mount.d
 usr/lib/systemd/system/tmp.mount.d/* usr/lib/systemd/system/tmp.mount.d
