@@ -79,23 +79,15 @@ apply_file_hardening_permissions() {
     enforce_statoverride "/etc/ssh/sshd_config" "0600" "root" "root"
 }
 
-configure_fstab_mount() {
-    _target="$1"
-    _fstype="$2"
-    _options="$3"
-    _file="/etc/fstab"
-
-    if grep -qE "^[[:space:]]*[^#].*[[:space:]]${_target}[[:space:]]" "${_file}"; then
-        sed -i "s@^[[:space:]]*\([^#][^[:space:]]*[[:space:]]\+${_target}[[:space:]]\+[^[:space:]]*[[:space:]]\+\)[^[:space:]]*@\1${_options}@" "${_file}"
-    else
-        printf "%s\t%s\t%s\t%s\t0\t0\n" "${_fstype}" "${_target}" "${_fstype}" "${_options}" >> "${_file}"
-    fi
-}
-
 apply_mount_remount() {
     _target="$1"
-    if [ -d "${_target}" ]; then
-        mount -o remount "${_target}" || true
+    _options="$2"
+    if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
+        if [ -n "${_options}" ]; then
+            mount -o remount,"${_options}" "${_target}" || true
+        else
+            mount -o remount "${_target}" || true
+        fi
     fi
 }
 
@@ -109,8 +101,6 @@ case "$1" in
 
         apply_file_hardening_permissions
 
-        configure_fstab_mount "/tmp" "tmpfs" "defaults,nosuid,nodev"
-        configure_fstab_mount "/dev/shm" "tmpfs" "defaults,nosuid,nodev"
         apply_mount_remount "/tmp"
         apply_mount_remount "/dev/shm"
 

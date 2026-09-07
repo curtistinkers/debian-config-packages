@@ -43,12 +43,6 @@ revert_file_permissions() {
     remove_statoverride "/etc/ssh/sshd_config"
 }
 
-cleanup_fstab_mount() {
-    _target="$1"
-    _file="/etc/fstab"
-    sed -i "s@\(${_target}[[:space:]]\+[^[:space:]]\+[[:space:]]\+\)[^[:space:]]*nosuid,nodev[^[:space:]]*@\1defaults@g" "${_file}" || true
-}
-
 apply_mount_remount() {
     _target="$1"
     if [ -d "${_target}" ]; then
@@ -74,8 +68,6 @@ case "$1" in
         remove_faillock_config
         revert_file_permissions
 
-        cleanup_fstab_mount "/tmp"
-        cleanup_fstab_mount "/dev/shm"
         apply_mount_remount "/tmp"
         apply_mount_remount "/dev/shm"
 
