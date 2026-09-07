@@ -21,10 +21,13 @@ disable_server_daemons() {
     done
 }
 
-apply_presets() {
-    # Apply unit presets if systemd is running as PID 1
+set_default_target() {
+    # Check if systemd is actively running as PID 1
     if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
-        systemctl preset default.target || true
+        CURRENT_TARGET=$(systemctl get-default 2>/dev/null || true)
+        if [ "$CURRENT_TARGET" != "multi-user.target" ]; then
+            systemctl set-default multi-user.target || true
+        fi
     fi
 }
 
@@ -39,7 +42,7 @@ apply_sysctl_settings() {
 case "$1" in
     configure)
         disable_server_daemons
-        apply_presets
+        set_default_target
         apply_sysctl_settings
     ;;
 
