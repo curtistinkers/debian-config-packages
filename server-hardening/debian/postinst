@@ -62,7 +62,7 @@ apply_mount_remount() {
     _options="$2"
     if [ -d "${_target}" ] || [ "${_target}" = "/proc" ]; then
         if [ -n "${_options}" ]; then
-            mount -o remount,${_options} "${_target}" || true
+            mount -o remount,"${_options}" "${_target}" || true
         else
             mount -o remount "${_target}" || true
         fi
