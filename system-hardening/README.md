@@ -15,7 +15,7 @@ breaking core functionality.
   regular/FIFO writes in sticky directories (`/tmp`), and restricts TTY line
   discipline auto-loading (`dev.tty.ldisc_autoload`).
 * **Information Leak & Process Protection:** Hides kernel pointers
-  (`kptr_restrict`), restricts `dmesg` buffer access, and limits processtracing
+  (`kptr_restrict`), restricts `dmesg` buffer access, and limits process tracing
   via `ptrace_scope`.
 * **eBPF Hardening:** Restricts unprivileged eBPF execution
   (`kernel.unprivileged_bpf_disabled`) and enables JIT compiler constant blinding
@@ -25,6 +25,9 @@ breaking core functionality.
   `libpam-pwquality` and declarative `pam-auth-update` profiles. Configures
   account lockout (`pam_faillock`) after consecutive failed attempts. Safe POSIX
   maintainer hooks enforce `login.defs` baselines (`UMASK 027`, SHA-512 rounds).
+* **System File Permissions:** Enforces persistent, restricted access permissions
+  on sensitive system files and directories (`/boot/grub/grub.cfg`,
+  `/etc/crontab`, `/etc/cron.*`, `/etc/ssh/sshd_config`) using `dpkg-statoverride`.
 * **Environment Default Umask:** Enforces system-wide baseline `umask 027`
   across interactive/login shell sessions (`/etc/profile.d/50-default-umask.sh`)
   and daemon initializations (`/etc/login.defs`).
@@ -60,10 +63,10 @@ debian-config-system-hardening/
 └── usr/
     ├── lib/
     │   ├── sysctl.d/
-    │   │   └── 50-system-hardening.conf        # Kernel runtime protection options
+    │   │   └── 50-system-hardening.conf         # Kernel runtime protection options
     │   └── systemd/
     │       └── coredump.conf.d/
-    │           └── 50-disable-coredump.conf    # Core dump suppression rules
+    │           └── 50-disable-coredump.conf     # Core dump suppression rules
     └── share/
         └── pam-configs/
             ├── system-hardening-faillock        # Account lockout PAM profile
@@ -95,6 +98,17 @@ grep -E "(pwquality|faillock)" /etc/pam.d/common-auth /etc/pam.d/common-password
 # Test password policy parsing with pwscore
 echo "weakpass" | pwscore
 # Output: Password is shorter than 12 characters
+
+# Check registered overrides after postinst runs
+dpkg-statoverride --list "/etc/cron.daily"
+# Output: root root 0700 /etc/cron.daily
+
+# Test purging the package
+dpkg --purge debian-config-system-hardening
+
+# Confirm overrides are cleaned up
+dpkg-statoverride --list "/etc/cron.daily"
+# Output: (empty return)
 ```
 
 ## Building

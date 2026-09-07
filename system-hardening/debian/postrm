@@ -24,12 +24,32 @@ remove_faillock_config() {
     fi
 }
 
+remove_statoverride() {
+    _path="$1"
+
+    if dpkg-statoverride --list "${_path}" >/dev/null 2>&1; then
+        dpkg-statoverride --remove "${_path}" || true
+    fi
+}
+
+revert_file_permissions() {
+    remove_statoverride "/boot/grub/grub.cfg"
+    remove_statoverride "/etc/crontab"
+    remove_statoverride "/etc/cron.d"
+    remove_statoverride "/etc/cron.daily"
+    remove_statoverride "/etc/cron.hourly"
+    remove_statoverride "/etc/cron.weekly"
+    remove_statoverride "/etc/cron.monthly"
+    remove_statoverride "/etc/ssh/sshd_config"
+}
+
 # --- Main Logic Execution ---
 
 case "$1" in
     remove|purge)
         remove_pwquality_config
         remove_faillock_config
+        revert_file_permissions
         reload_sysctl
     ;;
     

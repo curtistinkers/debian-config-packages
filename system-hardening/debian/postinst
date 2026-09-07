@@ -25,28 +25,57 @@ apply_faillock_config() {
 }
 
 set_config_key() {
-    KEY="$1"
-    VALUE="$2"
-    FILE="$3"
+    _key="$1"
+    _value="$2"
+    _file="$3"
 
     # Match key even if commented out or at end of line
-    if grep -qE "^[[:space:]]*#?[[:space:]]*${KEY}([[:space:]]+|$)" "${FILE}"; then
+    if grep -qE "^[[:space:]]*#?[[:space:]]*${_key}([[:space:]]+|$)" "${_file}"; then
         # Update existing line (handles trailing whitespace or direct end-of-line)
-        sed -i -E "s@^[[:space:]]*#?[[:space:]]*${KEY}([[:space:]].*)?\$@${KEY}\t${VALUE}@" "${FILE}"
+        sed -i -E "s@^[[:space:]]*#?[[:space:]]*${_key}([[:space:]].*)?\$@${_key}\t${_value}@" "${_file}"
     else
         # Append missing key
-        printf "%s\t%s\n" "${KEY}" "${VALUE}" >> "${FILE}"
+        printf "%s\t%s\n" "${_key}" "${_value}" >> "${_file}"
     fi
 }
 
 apply_login_defs_hardening() {
-    LOGIN_DEFS="/etc/login.defs"
-    if [ -f "${LOGIN_DEFS}" ]; then
+    _login_defs="/etc/login.defs"
+    if [ -f "${_login_defs}" ]; then
         # Check and set/append each key safely
-        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "${LOGIN_DEFS}"
-        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "${LOGIN_DEFS}"
-        set_config_key "UMASK"                "027"   "${LOGIN_DEFS}"
+        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "${_login_defs}"
+        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "${_login_defs}"
+        set_config_key "UMASK"                "027"   "${_login_defs}"
     fi
+}
+
+# Helper function to safely apply file/directory permissions
+enforce_statoverride() {
+    _target_path="$1"
+    _mode="$2"
+    _owner="$3"
+
+    if [ -e "${_target_path}" ]; then
+        if ! dpkg-statoverride --list "${_target_path}" >/dev/null 2>&1; then
+            dpkg-statoverride --update --add "${_owner}" "${_mode}" "${_target_path}" || true
+        fi
+    fi
+}
+
+apply_file_permissions() {
+    # GRUB configuration (protect kernel params / boot hashes)
+    enforce_statoverride "/boot/grub/grub.cfg" "0600" "root:root"
+
+    # Cron system permissions
+    enforce_statoverride "/etc/crontab" "0600" "root:root"
+    enforce_statoverride "/etc/cron.d" "0700" "root:root"
+    enforce_statoverride "/etc/cron.daily" "0700" "root:root"
+    enforce_statoverride "/etc/cron.hourly" "0700" "root:root"
+    enforce_statoverride "/etc/cron.weekly" "0700" "root:root"
+    enforce_statoverride "/etc/cron.monthly" "0700" "root:root"
+
+    # SSH config file (if present)
+    enforce_statoverride "/etc/ssh/sshd_config" "0600" "root:root"
 }
 
 # --- Main Logic Execution ---
@@ -56,6 +85,7 @@ case "$1" in
         apply_login_defs_hardening
         apply_pwquality_config
         apply_faillock_config
+        apply_file_permissions
         apply_sysctl_settings
     ;;
 
