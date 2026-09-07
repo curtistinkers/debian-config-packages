@@ -53,29 +53,30 @@ apply_login_defs_hardening() {
 enforce_statoverride() {
     _target_path="$1"
     _mode="$2"
-    _owner="$3"
+    _user="$3"
+    _group="$4"
 
     if [ -e "${_target_path}" ]; then
         if ! dpkg-statoverride --list "${_target_path}" >/dev/null 2>&1; then
-            dpkg-statoverride --update --add "${_owner}" "${_mode}" "${_target_path}" || true
+            dpkg-statoverride --update --add "${_user}" "${_group}" "${_mode}" "${_target_path}" || true
         fi
     fi
 }
 
 apply_file_permissions() {
-    # GRUB configuration (protect kernel params / boot hashes)
-    enforce_statoverride "/boot/grub/grub.cfg" "0600" "root:root"
+    # GRUB configuration
+    enforce_statoverride "/boot/grub/grub.cfg" "0600" "root" "root"
 
     # Cron system permissions
-    enforce_statoverride "/etc/crontab" "0600" "root:root"
-    enforce_statoverride "/etc/cron.d" "0700" "root:root"
-    enforce_statoverride "/etc/cron.daily" "0700" "root:root"
-    enforce_statoverride "/etc/cron.hourly" "0700" "root:root"
-    enforce_statoverride "/etc/cron.weekly" "0700" "root:root"
-    enforce_statoverride "/etc/cron.monthly" "0700" "root:root"
+    enforce_statoverride "/etc/crontab" "0600" "root" "root"
+    enforce_statoverride "/etc/cron.d" "0700" "root" "root"
+    enforce_statoverride "/etc/cron.daily" "0700" "root" "root"
+    enforce_statoverride "/etc/cron.hourly" "0700" "root" "root"
+    enforce_statoverride "/etc/cron.weekly" "0700" "root" "root"
+    enforce_statoverride "/etc/cron.monthly" "0700" "root" "root"
 
     # SSH config file (if present)
-    enforce_statoverride "/etc/ssh/sshd_config" "0600" "root:root"
+    enforce_statoverride "/etc/ssh/sshd_config" "0600" "root" "root"
 }
 
 # --- Main Logic Execution ---

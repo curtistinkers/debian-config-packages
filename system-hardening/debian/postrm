@@ -25,10 +25,10 @@ remove_faillock_config() {
 }
 
 remove_statoverride() {
-    _path="$1"
+    _target_path="$1"
 
-    if dpkg-statoverride --list "${_path}" >/dev/null 2>&1; then
-        dpkg-statoverride --remove "${_path}" || true
+    if dpkg-statoverride --list "${_target_path}" >/dev/null 2>&1; then
+        dpkg-statoverride --remove "${_target_path}" || true
     fi
 }
 
