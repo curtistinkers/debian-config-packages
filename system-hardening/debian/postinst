@@ -12,15 +12,15 @@ apply_sysctl_settings() {
     fi
 }
 
-apply_pwquality_config() {
+apply_pam_pwquality_hardening() {
     if command -v pam-auth-update >/dev/null 2>&1; then
-        pam-auth-update --package --enable system-hardening-pwquality || true
+        pam-auth-update --package --enable password-quality || true
     fi
 }
 
-apply_faillock_config() {
+apply_pam_faillock_hardening() {
     if command -v pam-auth-update >/dev/null 2>&1; then
-        pam-auth-update --package --enable system-hardening-faillock || true
+        pam-auth-update --package --enable faillock-actions faillock-preauth || true
     fi
 }
 
@@ -43,9 +43,10 @@ apply_login_defs_hardening() {
     _login_defs="/etc/login.defs"
     if [ -f "${_login_defs}" ]; then
         # Check and set/append each key safely
-        set_config_key "SHA_CRYPT_MIN_ROUNDS" "50000" "${_login_defs}"
-        set_config_key "SHA_CRYPT_MAX_ROUNDS" "50000" "${_login_defs}"
-        set_config_key "UMASK"                "027"   "${_login_defs}"
+        set_config_key "SHA_CRYPT_MIN_ROUNDS"   "50000" "${_login_defs}"
+        set_config_key "SHA_CRYPT_MAX_ROUNDS"   "50000" "${_login_defs}"
+        set_config_key "UMASK"                  "027"   "${_login_defs}"
+        set_config_key "FAILLOG_ENAB"           "yes"   "${_login_defs}"
     fi
 }
 
@@ -142,8 +143,8 @@ remount_dev_shm() {
 case "$1" in
     configure)
         apply_login_defs_hardening
-        apply_pwquality_config
-        apply_faillock_config
+        apply_pam_pwquality_hardening
+        apply_pam_faillock_hardening
 
         apply_file_hardening_permissions
 

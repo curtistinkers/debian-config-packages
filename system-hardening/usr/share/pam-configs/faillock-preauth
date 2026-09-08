@@ -1,0 +1,11 @@
+Name: Faillock Preauth
+Default: yes
+Priority: 300
+Auth-Type: Primary
+Auth-Initial:
+	required							pam_faillock.so preauth silent audit deny=5 unlock_time=900
+Auth:
+	required							pam_faillock.so preauth silent audit deny=5 unlock_time=900
+Account-Type: Primary
+Account:
+	required							pam_faillock.so
