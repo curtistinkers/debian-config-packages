@@ -1,4 +1,4 @@
-Name: Hardened Password Quality Checking
+Name: System Hardening Password Quality Checking
 Default: yes
 Priority: 1024
 Auth-Type: Primary
