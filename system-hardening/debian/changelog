@@ -7,8 +7,8 @@ debian-config-system-hardening (1.0.0) unstable; urgency=medium
   * Integrate libpam-pwquality dependency for password complexity enforcement.
   * Add 50-system-hardening.conf pwquality configuration drop-in under
     /etc/security/pwquality.conf.d/.
-  * Add system-hardening-pwquality PAM profile under /usr/share/pam-configs/
-    for declarative pam-auth-update execution.
+  * Add password-quality PAM profile.
+  * Add faillock-actions & faillock-preauth PAM profiles.
   * Update postinst script with POSIX set_config_key helper function to
     enforce password aging, UMASK 027, and hashing rounds in /etc/login.defs.
   * Expand sysctl baseline with dev.tty.ldisc_autoload,
