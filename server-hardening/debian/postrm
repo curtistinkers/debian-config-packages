@@ -32,9 +32,11 @@ remove_proc_fstab_entry() {
     fi
 }
 
+_proc_mount_options="defaults,relatime,nosuid,nodev,noexec,hidepid=0"
+
 remount_proc_default() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,hidepid=0 /proc || true
+        mount -o remount,"${_proc_mount_options}" /proc || true
     fi
 }
 

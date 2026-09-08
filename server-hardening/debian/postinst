@@ -54,8 +54,10 @@ fstab_proc_entry_exists() {
     grep -qE '^[[:space:]]*[^#].*[[:space:]]+/proc[[:space:]]' /etc/fstab
 }
 
+_proc_mount_options="defaults,relatime,nosuid,nodev,noexec,hidepid=2"
+
 add_proc_fstab_entry() {
-    _proc_fstab_line="proc /proc proc defaults,hidepid=2 0 0"
+    _proc_fstab_line="proc /proc proc ${_proc_mount_options} 0 0"
     if ! fstab_proc_entry_exists; then
         echo "Adding hardened /proc entry to /etc/fstab..."
         {
@@ -70,7 +72,7 @@ add_proc_fstab_entry() {
 
 remount_proc() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,hidepid=2 /proc || true
+        mount -o remount,"${_proc_mount_options}" /proc || true
     fi
 }
 

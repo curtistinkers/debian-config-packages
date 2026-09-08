@@ -89,8 +89,10 @@ fstab_dev_entry_exists() {
     grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev[[:space:]]' /etc/fstab
 }
 
+_dev_mount_options="defaults,mode=755,relatime,nosuid,noexec"
+
 add_dev_fstab_entry() {
-    _dev_fstab_line="devtmpfs /dev devtmpfs defaults,noexec 0 0"
+    _dev_fstab_line="devtmpfs /dev devtmpfs ${_dev_mount_options} 0 0"
     if ! fstab_dev_entry_exists; then
         echo "${PACKAGE_NAME}: Adding hardened /dev entry to /etc/fstab..."
         {
@@ -105,7 +107,7 @@ add_dev_fstab_entry() {
 
 remount_dev() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,noexec /dev || true
+        mount -o remount,"${_dev_mount_options}" /dev || true
     fi
 }
 
@@ -113,8 +115,10 @@ fstab_dev_shm_entry_exists() {
     grep -qE '^[[:space:]]*[^#].*[[:space:]]+/dev/shm[[:space:]]' /etc/fstab
 }
 
+_dev_shm_mount_options="defaults,mode=1777,strictatime,nosuid,nodev,noexec"
+
 add_dev_shm_fstab_entry() {
-    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,noexec 0 0"
+    _dev_shm_fstab_line="tmpfs /dev/shm tmpfs ${_dev_shm_mount_options} 0 0"
     if ! fstab_dev_shm_entry_exists; then
         echo "${PACKAGE_NAME}: Adding hardened /dev/shm entry to /etc/fstab..."
         {
@@ -129,7 +133,7 @@ add_dev_shm_fstab_entry() {
 
 remount_dev_shm() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,noexec /dev/shm || true
+        mount -o remount,"${_dev_shm_mount_options}" /dev/shm || true
     fi
 }
 

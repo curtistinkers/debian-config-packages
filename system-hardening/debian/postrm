@@ -56,9 +56,11 @@ remove_dev_fstab_entry() {
     fi
 }
 
+_dev_mount_options="defaults,mode=755,relatime,nosuid,exec"
+
 remount_dev_default() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,exec /dev || true
+        mount -o remount,"${_dev_mount_options}" /dev || true
     fi
 }
 
@@ -69,9 +71,11 @@ remove_dev_shm_fstab_entry() {
     fi
 }
 
+_dev_shm_mount_options="defaults,mode=1777,strictatime,nosuid,nodev,exec"
+
 remount_dev_shm_default() {
     if [ -d /run/systemd/system ]; then
-        mount -o remount,defaults,exec /dev/shm || true
+        mount -o remount,"${_dev_shm_mount_options}" /dev/shm || true
     fi
 }
 
