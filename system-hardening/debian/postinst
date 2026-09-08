@@ -80,8 +80,8 @@ apply_file_hardening_permissions() {
 }
 
 trigger_systemd_reload() {
-    if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-        deb-systemd-invoke daemon-reload || true
+    if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+        systemctl --system daemon-reload >/dev/null 2>&1 || true
     fi
 }
 
