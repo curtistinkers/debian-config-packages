@@ -6,9 +6,11 @@ SCRIPT_NAME="postinst"
 
 # --- Helper Functions ---
 
-disable_server_daemons() {
+disable_service_daemons() {
+    # Services to disable
     _services="exim4 cups avahi-daemon"
-    # Disable and stop services via invoke-rc.d and deb-systemd-helper
+
+    # Disable and stop services via deb-systemd-invoke and deb-systemd-helper
     for service in ${_services}; do
         if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
             echo "${PACKAGE_NAME}: Searching for ${service}.service"
@@ -90,7 +92,7 @@ remount_proc() {
 
 case "$1" in
     configure)
-        disable_server_daemons
+        disable_service_daemons
         set_default_target
 
         add_proc_fstab_entry
