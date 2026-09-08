@@ -7,15 +7,25 @@ SCRIPT_NAME="postinst"
 # --- Helper Functions ---
 
 disable_server_daemons() {
+    _services="exim4 cups avahi-daemon"
     # Disable and stop services via invoke-rc.d and deb-systemd-helper
-    for service in exim4 cups avahi-daemon; do
-        # Mask/disable the systemd unit persistently across reboots
-        if command -v deb-systemd-helper >/dev/null 2>&1; then
-            deb-systemd-helper disable "${service}.service" || true
-        fi
+    for service in ${_services}; do
+        if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+            echo "${PACKAGE_NAME}: Searching for ${service}.service"
+            if systemctl list-unit-files "${service}.service" >/dev/null 2>&1; then
+                if command -v deb-systemd-helper >/dev/null 2>&1; then
+                    echo "${PACKAGE_NAME}: Disabling ${service}.service"
+                    deb-systemd-helper disable "${service}.service" || true
+                fi
 
-        if [ -d /run/systemd/system ] && command -v deb-systemd-invoke >/dev/null 2>&1; then
-            deb-systemd-invoke stop "${service}" || true
+                # Only invoke a stop if the service is actively running
+                if systemctl is-active --quiet "${service}.service"; then
+                    if command -v deb-systemd-invoke >/dev/null 2>&1; then
+                        echo "${PACKAGE_NAME}: Stopping ${service}.service"
+                        deb-systemd-invoke stop "${service}" || true
+                    fi
+                fi
+            fi
         fi
     done
 }
