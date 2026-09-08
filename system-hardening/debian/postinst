@@ -92,14 +92,14 @@ fstab_dev_entry_exists() {
 add_dev_fstab_entry() {
     _dev_fstab_line="devtmpfs /dev devtmpfs defaults,noexec 0 0"
     if ! fstab_dev_entry_exists; then
-        echo "Adding hardened /dev entry to /etc/fstab..."
+        echo "${PACKAGE_NAME}: Adding hardened /dev entry to /etc/fstab..."
         {
             echo ""
             echo "# Added by ${PACKAGE_NAME} for /dev"
             echo "${_dev_fstab_line}"
         } >> /etc/fstab
     else
-        echo "/dev entry already exists in /etc/fstab."
+        echo "${PACKAGE_NAME}: /dev entry already exists in /etc/fstab."
     fi
 }
 
@@ -116,14 +116,14 @@ fstab_dev_shm_entry_exists() {
 add_dev_shm_fstab_entry() {
     _dev_shm_fstab_line="tmpfs /dev/shm tmpfs defaults,noexec 0 0"
     if ! fstab_dev_shm_entry_exists; then
-        echo "Adding hardened /dev/shm entry to /etc/fstab..."
+        echo "${PACKAGE_NAME}: Adding hardened /dev/shm entry to /etc/fstab..."
         {
             echo ""
             echo "# Added by ${PACKAGE_NAME} for /dev/shm"
             echo "${_dev_shm_fstab_line}"
         } >> /etc/fstab
     else
-        echo "/dev/shm entry already exists in /etc/fstab."
+        echo "${PACKAGE_NAME}: /dev/shm entry already exists in /etc/fstab."
     fi
 }
 
