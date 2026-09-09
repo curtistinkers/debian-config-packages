@@ -28,11 +28,12 @@ set_config_key() {
     _key="$1"
     _value="$2"
     _file="$3"
+    _tag="# Managed by ${PACKAGE_NAME}"
 
     # Match key even if commented out or at end of line
     if grep -qE "^[[:space:]]*#?[[:space:]]*${_key}([[:space:]]+|$)" "${_file}"; then
         # Update existing line (handles trailing whitespace or direct end-of-line)
-        sed -i -E "s@^[[:space:]]*#?[[:space:]]*${_key}([[:space:]].*)?\$@${_key}\t${_value}@" "${_file}"
+        sed -i -E "s@^[[:space:]]*#?[[:space:]]*${_key}([[:space:]].*)?\$@${_key}\t${_value}\t\t${_tag}@" "${_file}"
     else
         # Append missing key
         printf "%s\t%s\n" "${_key}" "${_value}" >> "${_file}"
@@ -46,11 +47,11 @@ apply_login_defs_hardening() {
         set_config_key "UMASK"                  "027"       "${_login_defs}"
         set_config_key "FAILLOG_ENAB"           "yes"       "${_login_defs}"
         set_config_key "ENCRYPT_METHOD"         "YESCRYPT"  "${_login_defs}"
-        set_config_key "YESCRYPT_COST_FACTOR"   "6"         "${_login_defs}"
         # YESCRYPT is the new preferred encryption method
         #set_config_key "ENCRYPT_METHOD"         "SHA512"    "${_login_defs}"
-        #set_config_key "SHA_CRYPT_MAX_ROUNDS"   "50000"     "${_login_defs}"
-        #set_config_key "SHA_CRYPT_MIN_ROUNDS"   "50000"     "${_login_defs}"
+        set_config_key "YESCRYPT_COST_FACTOR"   "6"         "${_login_defs}"
+        set_config_key "SHA_CRYPT_MAX_ROUNDS"   "50000"     "${_login_defs}"
+        set_config_key "SHA_CRYPT_MIN_ROUNDS"   "50000"     "${_login_defs}"
     fi
 }
 

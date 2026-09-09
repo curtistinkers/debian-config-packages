@@ -12,15 +12,9 @@ reload_sysctl() {
     fi
 }
 
-remove_pwquality_config() {
+remove_pam_faillock_config() {
     if command -v pam-auth-update >/dev/null 2>&1; then
-        pam-auth-update --package --remove system-hardening-pwquality || true
-    fi
-}
-
-remove_faillock_config() {
-    if command -v pam-auth-update >/dev/null 2>&1; then
-        pam-auth-update --package --remove system-hardening-faillock || true
+        pam-auth-update --package --remove faillock-actions faillock-preauth || true
     fi
 }
 
@@ -29,6 +23,13 @@ remove_statoverride() {
 
     if dpkg-statoverride --list "${_target_path}" >/dev/null 2>&1; then
         dpkg-statoverride --remove "${_target_path}" || true
+    fi
+}
+
+remove_login_defs_hardening() {
+    _login_defs="/etc/login.defs"
+    if [ -f "${_login_defs}" ]; then
+        sed -i '/# Managed by debian-config-system-hardening/d' "${_login_defs}"
     fi
 }
 
@@ -85,16 +86,15 @@ case "$1" in
     remove)
         # Package removal: clean up PAM profiles and statoverrides, 
         # but leave persistent system configuration (/etc/fstab) intact.
-        remove_pwquality_config
-        remove_faillock_config
+        remove_pam_faillock_config
         revert_file_permissions
         reload_sysctl
     ;;
 
     purge)
         # Package purge: clean up everything, including reverting fstab configurations.
-        remove_pwquality_config
-        remove_faillock_config
+        remove_pam_faillock_config
+        remove_login_defs_hardening
         revert_file_permissions
 
         remove_dev_fstab_entry
