@@ -11,10 +11,14 @@ Package: debian-config-system-hardening
 Architecture: all
 Depends:
  apparmor,
+ apt-listbugs,
  fail2ban,
- libpam-pwquality,
  libpam-modules,
-  ${misc:Depends}
+ libpam-pwquality,
+ libpam-tmpdir,
+ needrestart,
+ needrestart-session,
+ ${misc:Depends}
 Recommends:
  rng-tools5 | jitterentropy-rngd
 Description: Generic baseline system hardening for Debian

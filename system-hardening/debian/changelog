@@ -4,7 +4,14 @@ debian-config-system-hardening (1.0.0) unstable; urgency=medium
   * Add 50-system-hardening.conf for kernel self-protection parameters.
   * Add 50-disable-coredump.conf to prevent core dump memory leaks.
   * Enforce AppArmor dependency.
-  * Integrate libpam-pwquality dependency for password complexity enforcement.
+  * Enforce apt-listbugs dependency for listing critical bugs before each
+    APT installation.
+  * Enforce libpam-tmpdir dependency for per-user temporary directories.
+  * Enforce libpam-pwquality dependency for password complexity enforcement.
+  * Enforce needrestart for checking which daemons need to be restarted after
+    library upgrades
+  * Enforce needrestart-session for checking processes needed to be restarted
+    in user sessions
   * Add 50-system-hardening.conf pwquality configuration drop-in under
     /etc/security/pwquality.conf.d/.
   * Add password-quality PAM profile.
