@@ -17,7 +17,6 @@ Depends:
  libpam-pwquality,
  libpam-tmpdir,
  needrestart,
- needrestart-session,
  ${misc:Depends}
 Recommends:
  rng-tools5 | jitterentropy-rngd

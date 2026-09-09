@@ -151,7 +151,6 @@ remount_dev_shm() {
 case "$1" in
     configure)
         apply_login_defs_hardening
-        apply_pam_pwquality_hardening
         apply_pam_faillock_hardening
 
         apply_file_hardening_permissions
