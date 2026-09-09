@@ -43,10 +43,14 @@ apply_login_defs_hardening() {
     _login_defs="/etc/login.defs"
     if [ -f "${_login_defs}" ]; then
         # Check and set/append each key safely
-        set_config_key "SHA_CRYPT_MIN_ROUNDS"   "50000" "${_login_defs}"
-        set_config_key "SHA_CRYPT_MAX_ROUNDS"   "50000" "${_login_defs}"
-        set_config_key "UMASK"                  "027"   "${_login_defs}"
-        set_config_key "FAILLOG_ENAB"           "yes"   "${_login_defs}"
+        set_config_key "UMASK"                  "027"       "${_login_defs}"
+        set_config_key "FAILLOG_ENAB"           "yes"       "${_login_defs}"
+        set_config_key "ENCRYPT_METHOD"         "YESCRYPT"  "${_login_defs}"
+        set_config_key "YESCRYPT_COST_FACTOR"   "6"         "${_login_defs}"
+        # YESCRYPT is the new preferred encryption method
+        #set_config_key "ENCRYPT_METHOD"         "SHA512"    "${_login_defs}"
+        #set_config_key "SHA_CRYPT_MAX_ROUNDS"   "50000"     "${_login_defs}"
+        #set_config_key "SHA_CRYPT_MIN_ROUNDS"   "50000"     "${_login_defs}"
     fi
 }
 
