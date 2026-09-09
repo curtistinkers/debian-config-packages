@@ -1,7 +1,7 @@
 Name: Faillock Actions
 Default: yes
-Priority: 200
+Priority: 1000
 Auth-Type: Primary
 Auth:
 	[default=die]			pam_faillock.so authfail audit deny=5 unlock_time=900
-	sufficient				pam_faillock.so authsucc audit deny=5 unlock_time=900
+	sufficient			pam_faillock.so authsucc audit deny=5 unlock_time=900
