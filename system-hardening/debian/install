@@ -1,10 +1,12 @@
-etc/profile.d/* etc/profile.d/
+etc/fail2ban/jail.local             etc/fail2ban/
 
-etc/security/limits.d/* etc/security/limits.d/
-etc/security/pwquality.conf.d/* etc/security/pwquality.conf.d/
+etc/profile.d/*                     etc/profile.d/
 
-usr/lib/sysctl.d/* usr/lib/sysctl.d/
+etc/security/limits.d/*             etc/security/limits.d/
+etc/security/pwquality.conf.d/*     etc/security/pwquality.conf.d/
 
-usr/lib/systemd/coredump.conf.d/* usr/lib/systemd/coredump.conf.d/
+usr/lib/sysctl.d/*                  usr/lib/sysctl.d/
 
-usr/share/pam-configs/* usr/share/pam-configs/
+usr/lib/systemd/coredump.conf.d/*   usr/lib/systemd/coredump.conf.d/
+
+usr/share/pam-configs/*             usr/share/pam-configs/
